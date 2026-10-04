@@ -1,6 +1,7 @@
 import path from 'node:path';
 import {
   DefaultJobQueuePlugin,
+  DefaultSchedulerPlugin,
   DefaultSearchPlugin,
   dummyPaymentHandler,
   LanguageCode,
@@ -18,6 +19,7 @@ export const config: VendureConfig = {
     port: +(process.env.PORT || 3000),
     adminApiPath: 'admin-api',
     shopApiPath: 'shop-api',
+    csrfPrevention: true,
     cors: {
       origin: storefrontOrigins,
       credentials: true,
@@ -55,6 +57,7 @@ export const config: VendureConfig = {
       assetUrlPrefix: process.env.ASSET_URL_PREFIX,
     }),
     DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
+    DefaultSchedulerPlugin.init(),
     DefaultSearchPlugin.init({
       bufferUpdates: false,
       indexStockStatus: true,
