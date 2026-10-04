@@ -8,6 +8,7 @@ import {
   VendureConfig,
 } from '@vendure/core';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
+import { DashboardPlugin } from '@vendure/dashboard/plugin';
 
 const storefrontOrigins = (process.env.STOREFRONT_ORIGINS || 'http://localhost:5173,https://coffee.mrkyleoreilly.workers.dev')
   .split(',')
@@ -55,6 +56,10 @@ export const config: VendureConfig = {
       route: 'assets',
       assetUploadDir: process.env.ASSET_UPLOAD_DIR || path.join(__dirname, '../static/assets'),
       assetUrlPrefix: process.env.ASSET_URL_PREFIX,
+    }),
+    DashboardPlugin.init({
+      route: 'dashboard',
+      appDir: path.join(__dirname, 'dashboard'),
     }),
     DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
     DefaultSchedulerPlugin.init(),
