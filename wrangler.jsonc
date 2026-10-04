@@ -2,10 +2,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "coffee-storefront-phase1",
   "compatibility_date": "2026-10-04",
-  "main": "./worker/index.ts",
+  "main": "./worker/router.ts",
   "assets": {
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/admin", "/admin/*"]
   },
   "d1_databases": [
     {
