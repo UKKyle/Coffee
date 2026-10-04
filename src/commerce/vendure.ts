@@ -31,7 +31,8 @@ export type CommerceCart = {
   total: number;
 };
 
-const API_URL = (import.meta.env.VITE_VENDURE_SHOP_API || '').replace(/\/$/, '');
+const DEFAULT_API_URL = 'https://vendure-api-production-f960.up.railway.app/shop-api';
+const API_URL = (import.meta.env.VITE_VENDURE_SHOP_API || DEFAULT_API_URL).replace(/\/$/, '');
 const TOKEN_KEY = 'standard-dose-vendure-token';
 
 export const vendureEnabled = Boolean(API_URL);
@@ -61,7 +62,10 @@ const visualFromName = (name: string) => {
 async function gql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   if (!API_URL) throw new Error('Vendure Shop API is not configured');
 
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    'apollo-require-preflight': 'true',
+  };
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) headers.authorization = `Bearer ${token}`;
 
