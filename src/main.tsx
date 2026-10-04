@@ -56,7 +56,6 @@ function App() {
         </div>
 
         <div className="hero-vignette" />
-        <div className="media-credit">REAL FOOTAGE · PEXELS / LOS MUERTOS CREW</div>
       </section>
 
       <section id="rituals" className="section rituals">
