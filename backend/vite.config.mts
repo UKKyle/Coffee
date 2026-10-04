@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export default defineConfig({
+  base: '/dashboard',
   build: {
     outDir: join(__dirname, 'dist/dashboard'),
     emptyOutDir: false,
