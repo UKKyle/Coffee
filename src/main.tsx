@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
@@ -16,63 +16,8 @@ const categories = [
   ['Coffee', 'Beans, filters & repeat orders.'],
 ];
 
-const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-
 function App() {
-  const [progress, setProgress] = useState(0);
   const [cartCount, setCartCount] = useState(0);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const hasStartedRef = useRef(false);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.playbackRate = 0.72;
-      video.currentTime = 0;
-    }
-
-    const onScroll = () => {
-      const hero = document.querySelector<HTMLElement>('[data-hero]');
-      if (!hero) return;
-      const rect = hero.getBoundingClientRect();
-      const total = Math.max(1, hero.offsetHeight - window.innerHeight);
-      const travelled = Math.min(total, Math.max(0, -rect.top));
-      const next = travelled / total;
-      setProgress(next);
-
-      const media = videoRef.current;
-      if (!media) return;
-
-      if (next > 0.035 && next < 0.88) {
-        if (!hasStartedRef.current) {
-          hasStartedRef.current = true;
-          media.currentTime = 0;
-        }
-        if (media.paused && !media.ended) media.play().catch(() => undefined);
-      } else if (next >= 0.88) {
-        if (!media.paused) media.pause();
-      } else if (next <= 0.01) {
-        if (!media.paused) media.pause();
-        if (hasStartedRef.current) {
-          media.currentTime = 0;
-          hasStartedRef.current = false;
-        }
-      }
-    };
-
-    onScroll();
-    addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', onScroll);
-    return () => {
-      removeEventListener('scroll', onScroll);
-      removeEventListener('resize', onScroll);
-    };
-  }, []);
-
-  const copyOpacity = 1 - clamp((progress - 0.16) / 0.28);
-  const reveal = clamp((progress - 0.79) / 0.19);
-  const cameraScale = 1 + progress * 0.012;
-  const lockProgress = clamp((progress - 0.12) / 0.60);
 
   return (
     <main>
@@ -86,54 +31,32 @@ function App() {
         <button className="cart" type="button" aria-label={`Basket with ${cartCount} items`}>BAG <span>{cartCount}</span></button>
       </header>
 
-      <section id="top" data-hero className="hero-scroll">
-        <div className="hero-sticky">
-          <div className="hero-media-shell">
-            <div className="hero-media" style={{ transform: `scale(${cameraScale})` }}>
-              <video
-                ref={videoRef}
-                className="hero-video"
-                muted
-                playsInline
-                preload="auto"
-                poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94"
-                aria-label="Barista inserting and locking a portafilter into an espresso machine"
-              >
-                <source src="https://www.pexels.com/download/video/7487673/" type="video/mp4" />
-              </video>
-              <div className="hero-photo-fallback" aria-hidden="true" />
-            </div>
-            <div className="media-frame-label">PORTAFILTER / 01</div>
-            <div className="lock-steps" aria-hidden="true">
-              <span className={lockProgress > 0.05 ? 'active' : ''}>INSERT</span>
-              <i />
-              <span className={lockProgress > 0.40 ? 'active' : ''}>TWIST</span>
-              <i />
-              <span className={lockProgress > 0.72 ? 'active' : ''}>LOCK</span>
-            </div>
-          </div>
-
-          <div className="hero-vignette" />
-
-          <div className="hero-copy" style={{ opacity: copyOpacity, transform: `translateY(${(1 - copyOpacity) * -14}px)` }}>
-            <p className="eyebrow">HOME COFFEE, DIALED IN.</p>
-            <h1>Make the ritual<br/>feel better.</h1>
-            <p className="hero-sub">Tools, coffee and objects for the home barista.</p>
-            <a className="cta" href="#shop">Shop the setup</a>
-          </div>
-
-          <div className="hero-status" style={{ opacity: progress > 0.11 && progress < 0.77 ? 1 : 0 }}>
-            <span>01</span>
-            <div className="status-line"><i style={{ transform: `scaleX(${lockProgress})` }} /></div>
-            <span>LOCK THE GROUP</span>
-          </div>
-
-          <div className="hero-reveal" style={{ opacity: reveal, transform: `translateY(${14 - reveal * 14}px)` }}>
-            <span>ESPRESSO</span><span>ICED</span><span>MATCHA</span><span>COFFEE</span>
-          </div>
-          <div className="scroll-hint" style={{ opacity: progress < 0.065 ? 1 : 0 }}>SCROLL TO LOCK IN</div>
-          <div className="media-credit">REAL FOOTAGE · PEXELS / LOS MUERTOS CREW</div>
+      <section id="top" className="hero">
+        <div className="hero-copy">
+          <p className="eyebrow">HOME COFFEE, DIALED IN.</p>
+          <h1>Make the ritual<br/>feel better.</h1>
+          <p className="hero-sub">Tools, coffee and objects for the home barista.</p>
+          <a className="cta" href="#shop">Shop the setup</a>
         </div>
+
+        <div className="hero-media-shell">
+          <video
+            className="hero-video"
+            autoPlay
+            muted
+            playsInline
+            loop
+            preload="auto"
+            poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94"
+            aria-label="Barista inserting and locking a portafilter into an espresso machine"
+          >
+            <source src="https://www.pexels.com/download/video/7487673/" type="video/mp4" />
+          </video>
+          <div className="hero-photo-fallback" aria-hidden="true" />
+        </div>
+
+        <div className="hero-vignette" />
+        <div className="media-credit">REAL FOOTAGE · PEXELS / LOS MUERTOS CREW</div>
       </section>
 
       <section id="rituals" className="section rituals">
