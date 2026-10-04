@@ -16,10 +16,13 @@ const categories = [
   ['Coffee', 'Beans, filters & repeat orders.'],
 ];
 
+const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+const segment = (progress: number, start: number, end: number) => clamp((progress - start) / (end - start));
+const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+
 function App() {
   const [progress, setProgress] = useState(0);
   const [cartCount, setCartCount] = useState(0);
-  const lockStage = useMemo(() => Math.min(1, Math.max(0, progress / 0.68)), [progress]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -39,11 +42,23 @@ function App() {
     };
   }, []);
 
-  const translateX = 34 - lockStage * 34;
-  const translateY = 20 - lockStage * 20;
-  const rotate = -18 + lockStage * 42;
-  const extraction = Math.max(0, (progress - 0.66) / 0.22);
-  const reveal = Math.max(0, (progress - 0.76) / 0.24);
+  const portafilterMotion = useMemo(() => {
+    const approach = ease(segment(progress, 0.08, 0.40));
+    const insert = ease(segment(progress, 0.40, 0.57));
+    const twist = ease(segment(progress, 0.57, 0.72));
+    const settle = ease(segment(progress, 0.72, 0.79));
+
+    const x = 330 - approach * 250 - insert * 80;
+    const y = 72 - approach * 34 - insert * 38 + settle * 2;
+    const rotation = -14 + twist * 18 - settle * 1.5;
+    const scale = 0.965 + insert * 0.035;
+    return { x, y, rotation, scale };
+  }, [progress]);
+
+  const extraction = ease(segment(progress, 0.73, 0.91));
+  const reveal = ease(segment(progress, 0.82, 1));
+  const copyFade = 1 - ease(segment(progress, 0.10, 0.42));
+  const lockGlow = segment(progress, 0.64, 0.78) * (1 - segment(progress, 0.78, 0.88));
 
   return (
     <main>
@@ -59,30 +74,53 @@ function App() {
 
       <section id="top" data-hero className="hero-scroll">
         <div className="hero-sticky">
-          <div className="hero-copy" style={{ opacity: 1 - Math.min(1, progress * 2.2) }}>
+          <div className="hero-copy" style={{ opacity: copyFade, transform: `translateY(${-18 * (1 - copyFade)}px)` }}>
             <p className="eyebrow">HOME COFFEE, DIALED IN.</p>
             <h1>Make the ritual<br/>feel better.</h1>
             <p className="hero-sub">Tools, coffee and objects for the home barista.</p>
             <a className="cta" href="#shop">Shop the setup</a>
           </div>
 
-          <div className="machine-wrap" aria-label="Stylised stainless espresso machine prototype">
-            <div className="machine">
-              <div className="machine-top"><span className="badge">9 BAR</span><span className="gauge"></span></div>
-              <div className="group-head"><span></span></div>
-              <div className="drip-tray"></div>
-              <div className="cup" style={{ opacity: extraction, transform: `translateY(${Math.max(0, 16 - extraction * 16)}px)` }}>
-                <div className="espresso" style={{ height: `${Math.min(100, extraction * 100)}%` }}></div>
+          <div className="machine-wrap" aria-label="Close-up stainless espresso machine with scroll-controlled portafilter">
+            <div className="machine-shadow" />
+            <div className="machine-body">
+              <div className="steel-brush" />
+              <div className="machine-edge" />
+              <div className="machine-brandmark">DS / 9 BAR</div>
+              <div className="status-led" />
+              <div className="steam-knob"><span /></div>
+              <div className="group-assembly">
+                <div className="group-collar"><span className="group-slot group-slot-a"/><span className="group-slot group-slot-b"/></div>
+                <div className="group-ring" />
+                <div className="group-face"><span className="shower-screen" /></div>
+                <span className="group-bolt bolt-a"/><span className="group-bolt bolt-b"/>
               </div>
-              <div className="stream" style={{ opacity: extraction > 0.12 ? 1 : 0, transform: `scaleY(${Math.min(1, extraction)})` }}></div>
+              <div className="tray-shadow" />
+              <div className="drip-tray"><span /></div>
+              <div className="cup" style={{ opacity: extraction, transform: `translateY(${18 - extraction * 18}px) scale(${0.98 + extraction * 0.02})` }}>
+                <div className="crema" style={{ height: `${24 + extraction * 18}%` }} />
+                <div className="espresso" style={{ height: `${Math.min(78, extraction * 78)}%` }} />
+              </div>
+              <div className="stream stream-left" style={{ opacity: extraction > 0.08 ? extraction : 0, transform: `scaleY(${extraction})` }} />
+              <div className="stream stream-right" style={{ opacity: extraction > 0.12 ? extraction * .82 : 0, transform: `scaleY(${extraction * .96})` }} />
             </div>
-            <div className="portafilter" style={{ transform: `translate(${translateX}vw, ${translateY}px) rotate(${rotate}deg)` }}>
-              <div className="basket"></div><div className="handle"></div>
+
+            <div
+              className="portafilter"
+              style={{
+                transform: `translate3d(${portafilterMotion.x}px, ${portafilterMotion.y}px, 0) rotate(${portafilterMotion.rotation}deg) scale(${portafilterMotion.scale})`,
+              }}
+            >
+              <div className="pf-basket"><span className="pf-rim"/><span className="pf-lug lug-top"/><span className="pf-lug lug-bottom"/></div>
+              <div className="pf-neck" />
+              <div className="pf-handle"><span className="pf-cap" /></div>
             </div>
-            <div className="lock-mark" style={{ opacity: progress > 0.58 && progress < 0.76 ? 1 : 0 }}>LOCKED</div>
+
+            <div className="lock-pulse" style={{ opacity: lockGlow }} />
+            <div className="lock-caption" style={{ opacity: lockGlow }}>INSERT · TWIST · LOCK</div>
           </div>
 
-          <div className="hero-reveal" style={{ opacity: reveal }}>
+          <div className="hero-reveal" style={{ opacity: reveal, transform: `translateY(${18 - reveal * 18}px)` }}>
             <span>ESPRESSO</span><span>ICED</span><span>MATCHA</span><span>COFFEE</span>
           </div>
           <div className="scroll-hint" style={{ opacity: progress < 0.08 ? 1 : 0 }}>SCROLL TO LOCK</div>
