@@ -22,8 +22,15 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.playbackRate = 0.82;
+      video.currentTime = 0;
+    }
+
     const onScroll = () => {
       const hero = document.querySelector<HTMLElement>('[data-hero]');
       if (!hero) return;
@@ -33,12 +40,23 @@ function App() {
       const next = travelled / total;
       setProgress(next);
 
-      const video = videoRef.current;
-      if (video && Number.isFinite(video.duration) && video.duration > 0) {
-        const start = Math.min(0.8, video.duration * 0.08);
-        const end = Math.max(start + 0.5, video.duration * 0.9);
-        const target = start + (end - start) * clamp(next);
-        if (Math.abs(video.currentTime - target) > 0.035) video.currentTime = target;
+      const media = videoRef.current;
+      if (!media) return;
+
+      if (next > 0.055 && next < 0.84) {
+        if (!hasStartedRef.current) {
+          hasStartedRef.current = true;
+          media.currentTime = Math.min(0.25, Number.isFinite(media.duration) ? media.duration * 0.03 : 0.25);
+        }
+        if (media.paused) media.play().catch(() => undefined);
+      } else if (next >= 0.84) {
+        if (!media.paused) media.pause();
+      } else if (next <= 0.02) {
+        if (!media.paused) media.pause();
+        if (hasStartedRef.current) {
+          media.currentTime = 0;
+          hasStartedRef.current = false;
+        }
       }
     };
 
@@ -51,10 +69,11 @@ function App() {
     };
   }, []);
 
-  const copyOpacity = 1 - clamp((progress - 0.10) / 0.28);
-  const reveal = clamp((progress - 0.78) / 0.22);
-  const cameraScale = 1.04 + progress * 0.08;
-  const cameraY = -2 + progress * -4;
+  const copyOpacity = 1 - clamp((progress - 0.10) / 0.30);
+  const reveal = clamp((progress - 0.74) / 0.24);
+  const cameraScale = 1 + progress * 0.018;
+  const cameraX = progress * -1.2;
+  const cameraY = progress * -0.8;
 
   return (
     <main>
@@ -70,38 +89,40 @@ function App() {
 
       <section id="top" data-hero className="hero-scroll">
         <div className="hero-sticky">
-          <div className="hero-media" style={{ transform: `translateY(${cameraY}%) scale(${cameraScale})` }}>
-            <video
-              ref={videoRef}
-              className="hero-video"
-              muted
-              playsInline
-              preload="metadata"
-              poster="https://images.pexels.com/photos/28835892/pexels-photo-28835892/free-photo-of-close-up-of-portafilter-in-espresso-machine.jpeg?auto=compress&cs=tinysrgb&w=1800"
-              aria-label="Real close-up footage of a portafilter being fitted to an espresso machine"
-            >
-              <source src="https://www.pexels.com/download/video/7487673/" type="video/mp4" />
-            </video>
-            <div className="hero-photo-fallback" aria-hidden="true" />
+          <div className="hero-media-shell">
+            <div className="hero-media" style={{ transform: `translate3d(${cameraX}%, ${cameraY}%, 0) scale(${cameraScale})` }}>
+              <video
+                ref={videoRef}
+                className="hero-video"
+                muted
+                playsInline
+                preload="auto"
+                poster="https://images.pexels.com/photos/28835892/pexels-photo-28835892/free-photo-of-close-up-of-portafilter-in-espresso-machine.jpeg?auto=compress&cs=tinysrgb&w=2400&q=92"
+                aria-label="Close-up footage of a portafilter being fitted to an espresso machine"
+              >
+                <source src="https://www.pexels.com/download/video/7487673/" type="video/mp4" />
+              </video>
+              <div className="hero-photo-fallback" aria-hidden="true" />
+            </div>
           </div>
 
           <div className="hero-vignette" />
           <div className="hero-grain" />
 
-          <div className="hero-copy" style={{ opacity: copyOpacity, transform: `translateY(${(1 - copyOpacity) * -18}px)` }}>
+          <div className="hero-copy" style={{ opacity: copyOpacity, transform: `translateY(${(1 - copyOpacity) * -16}px)` }}>
             <p className="eyebrow">HOME COFFEE, DIALED IN.</p>
             <h1>Make the ritual<br/>feel better.</h1>
             <p className="hero-sub">Tools, coffee and objects for the home barista.</p>
             <a className="cta" href="#shop">Shop the setup</a>
           </div>
 
-          <div className="hero-status" style={{ opacity: progress > 0.14 && progress < 0.80 ? 1 : 0 }}>
+          <div className="hero-status" style={{ opacity: progress > 0.12 && progress < 0.76 ? 1 : 0 }}>
             <span>01</span>
-            <div className="status-line"><i style={{ transform: `scaleX(${clamp(progress / 0.8)})` }} /></div>
-            <span>LOCK IN</span>
+            <div className="status-line"><i style={{ transform: `scaleX(${clamp(progress / 0.76)})` }} /></div>
+            <span>DIAL IN</span>
           </div>
 
-          <div className="hero-reveal" style={{ opacity: reveal, transform: `translateY(${18 - reveal * 18}px)` }}>
+          <div className="hero-reveal" style={{ opacity: reveal, transform: `translateY(${16 - reveal * 16}px)` }}>
             <span>ESPRESSO</span><span>ICED</span><span>MATCHA</span><span>COFFEE</span>
           </div>
           <div className="scroll-hint" style={{ opacity: progress < 0.07 ? 1 : 0 }}>SCROLL TO DIAL IN</div>
