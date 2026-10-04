@@ -9,7 +9,8 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) {
+    // Admin must be handled by the Worker before the SPA fallback serves index.html.
+    if (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname.startsWith('/admin/')) {
       return adminResponse();
     }
 
