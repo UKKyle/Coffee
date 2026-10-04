@@ -1,10 +1,9 @@
-import { vendureDashboardPlugin } from '@vendure/dashboard/vite';
+import { vendureDashboardPlugin } from '@vendure/dashboard/plugin';
 import { defineConfig } from 'vite';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export default defineConfig({
-  base: '/dashboard/',
   build: {
     outDir: join(__dirname, 'dist/dashboard'),
     emptyOutDir: false,
@@ -16,7 +15,6 @@ export default defineConfig({
         ? { host: 'auto', port: 'auto' }
         : { host: 'http://localhost', port: 3000 },
       gqlOutputPath: './src/gql',
-      useExperimentalBundle: true,
     }),
   ],
   resolve: {
