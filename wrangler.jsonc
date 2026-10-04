@@ -7,5 +7,12 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": true
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "standard-dose",
+      "database_id": "840fd35c-4cc4-4cb8-96c4-d7e803fd6a85"
+    }
+  ]
 }
