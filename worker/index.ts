@@ -202,6 +202,7 @@ function mapProduct(row: any) {
     stock: row.stock_status,
     image: row.image_url || undefined,
     stockOnHand: row.stock_on_hand,
+    sortOrder: row.sort_order,
   };
 }
 
@@ -445,7 +446,40 @@ async function handleApi(request: Request, env: Env) {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
     const { results = [] } = await env.DB.prepare('SELECT * FROM products ORDER BY sort_order, name').all();
-    return json({ products:results.map((r:any)=>({ ...mapProduct(r), enabled:Boolean(r.enabled), supplier:r.supplier, supplierSku:r.supplier_sku, supplierUrl:r.supplier_url, cost:r.cost_pence == null ? null : r.cost_pence/100, fulfilmentMethod:r.fulfilment_method, leadTime:r.lead_time })) });
+    return json({ products:results.map((r:any)=>({ ...mapProduct(r), enabled:Boolean(r.enabled), supplier:r.supplier, supplierSku:r.supplier_sku, supplierUrl:r.supplier_url, cost:r.cost_pence == null ? null : r.cost_pence/100, fulfilmentMethod:r.fulfilment_method, leadTime:r.lead_time, sortOrder:r.sort_order })) });
+  }
+
+  if (path === '/api/admin/products' && method === 'POST') {
+    const auth = await requireAdmin(request, env, true);
+    if (auth.error) return auth.error;
+    const body = await request.json() as any;
+    const name = String(body.name || '').trim();
+    const slug = String(body.slug || '').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    const variantId = String(body.variantId || slug || crypto.randomUUID()).trim();
+    const id = String(body.id || slug || crypto.randomUUID()).trim();
+    const category = String(body.category || 'Setup').trim();
+    const description = String(body.description || '').trim();
+    const tag = String(body.tag || '').trim();
+    const compatibility = String(body.compatibility || '').trim() || null;
+    const image = String(body.image || '').trim() || null;
+    const stockOnHand = Math.max(0, Math.floor(Number(body.stockOnHand || 0)));
+    const stock = stockOnHand <= 0 ? 'out' : stockOnHand <= 10 ? 'low' : 'in';
+    const pricePence = Math.round(Number(body.price || 0) * 100);
+    const compareAtPence = body.compareAt === '' || body.compareAt == null ? null : Math.round(Number(body.compareAt) * 100);
+    const sortRow = await env.DB.prepare('SELECT COALESCE(MAX(sort_order),-1)+1 AS n FROM products').first();
+    const sortOrder = body.sortOrder == null ? Number(sortRow?.n || 0) : Math.max(0, Math.floor(Number(body.sortOrder)));
+    if (!name || !slug || !variantId || pricePence < 0) return json({ error:'Name, slug, SKU and valid price are required' }, { status:400 });
+
+    await env.DB.prepare(`INSERT INTO products
+      (id,variant_id,slug,name,price_pence,compare_at_pence,tag,category,description,compatibility,visual,stock_status,image_url,stock_on_hand,supplier,supplier_sku,supplier_url,cost_pence,fulfilment_method,lead_time,enabled,sort_order)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .bind(id,variantId,slug,name,pricePence,compareAtPence,tag,category,description,compatibility,'cup',stock,image,stockOnHand,
+        String(body.supplier || '').trim() || null,String(body.supplierSku || '').trim() || null,String(body.supplierUrl || '').trim() || null,
+        body.cost === '' || body.cost == null ? null : Math.round(Number(body.cost)*100),
+        String(body.fulfilmentMethod || '').trim() || null,String(body.leadTime || '').trim() || null,body.enabled === false ? 0 : 1,sortOrder).run();
+
+    const row = await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first();
+    return json({ product:{ ...mapProduct(row), enabled:Boolean(row.enabled) } }, { status:201 });
   }
 
   const adminProductMatch = path.match(/^\/api\/admin\/products\/([^/]+)$/);
@@ -463,8 +497,7 @@ async function handleApi(request: Request, env: Env) {
       category: body.category ?? existing.category,
       description: body.description ?? existing.description,
       compatibility: body.compatibility ?? existing.compatibility,
-      stock_status: body.stock ?? existing.stock_status,
-      stock_on_hand: body.stockOnHand == null ? existing.stock_on_hand : Math.max(0, Number(body.stockOnHand)),
+      stock_on_hand: body.stockOnHand == null ? existing.stock_on_hand : Math.max(0, Math.floor(Number(body.stockOnHand))),
       image_url: body.image ?? existing.image_url,
       supplier: body.supplier ?? existing.supplier,
       supplier_sku: body.supplierSku ?? existing.supplier_sku,
@@ -473,9 +506,14 @@ async function handleApi(request: Request, env: Env) {
       fulfilment_method: body.fulfilmentMethod ?? existing.fulfilment_method,
       lead_time: body.leadTime ?? existing.lead_time,
       enabled: body.enabled == null ? existing.enabled : body.enabled ? 1 : 0,
+      compare_at_pence: body.compareAt === '' ? null : body.compareAt == null ? existing.compare_at_pence : Math.round(Number(body.compareAt)*100),
+      sort_order: body.sortOrder == null ? existing.sort_order : Math.max(0, Math.floor(Number(body.sortOrder))),
+      slug: body.slug == null ? existing.slug : String(body.slug).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),
+      variant_id: body.variantId == null ? existing.variant_id : String(body.variantId).trim(),
     };
-    await env.DB.prepare(`UPDATE products SET name=?,price_pence=?,tag=?,category=?,description=?,compatibility=?,stock_status=?,stock_on_hand=?,image_url=?,supplier=?,supplier_sku=?,supplier_url=?,cost_pence=?,fulfilment_method=?,lead_time=?,enabled=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`)
-      .bind(next.name,next.price_pence,next.tag,next.category,next.description,next.compatibility,next.stock_status,next.stock_on_hand,next.image_url,next.supplier,next.supplier_sku,next.supplier_url,next.cost_pence,next.fulfilment_method,next.lead_time,next.enabled,id).run();
+    const stockStatus = next.stock_on_hand <= 0 ? 'out' : next.stock_on_hand <= 10 ? 'low' : 'in';
+    await env.DB.prepare(`UPDATE products SET name=?,variant_id=?,slug=?,price_pence=?,compare_at_pence=?,tag=?,category=?,description=?,compatibility=?,stock_status=?,stock_on_hand=?,image_url=?,supplier=?,supplier_sku=?,supplier_url=?,cost_pence=?,fulfilment_method=?,lead_time=?,enabled=?,sort_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+      .bind(next.name,next.variant_id,next.slug,next.price_pence,next.compare_at_pence,next.tag,next.category,next.description,next.compatibility,stockStatus,next.stock_on_hand,next.image_url,next.supplier,next.supplier_sku,next.supplier_url,next.cost_pence,next.fulfilment_method,next.lead_time,next.enabled,next.sort_order,id).run();
     const row = await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first();
     return json({ product:mapProduct(row) });
   }
