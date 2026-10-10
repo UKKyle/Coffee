@@ -482,6 +482,20 @@ async function handleApi(request: Request, env: Env) {
     return json({ product:{ ...mapProduct(row), enabled:Boolean(row.enabled) } }, { status:201 });
   }
 
+  if (path === '/api/admin/products/bulk' && method === 'POST') {
+    const auth = await requireAdmin(request, env, true);
+    if (auth.error) return auth.error;
+    const body = await request.json() as any;
+    const ids = Array.isArray(body.ids) ? body.ids.map((id:any)=>String(id)).filter(Boolean).slice(0,100) : [];
+    const action = String(body.action || '');
+    if (!ids.length) return json({ error:'Select at least one product' }, { status:400 });
+    if (!['publish','archive'].includes(action)) return json({ error:'Unsupported bulk action' }, { status:400 });
+    const enabled = action === 'publish' ? 1 : 0;
+    const stmt = env.DB.prepare('UPDATE products SET enabled=?, updated_at=CURRENT_TIMESTAMP WHERE id=?');
+    await env.DB.batch(ids.map((id:string)=>stmt.bind(enabled,id)));
+    return json({ ok:true, updated:ids.length });
+  }
+
   const adminProductMatch = path.match(/^\/api\/admin\/products\/([^/]+)$/);
   if (adminProductMatch && method === 'PATCH') {
     const auth = await requireAdmin(request, env, true);
