@@ -13,10 +13,10 @@ import {
 
 type Product = CommerceProduct;
 const categories = [
-  ['Espresso', 'Prep, pull, repeat.'],
-  ['Iced', 'Glassware, syrups & cold brew.'],
-  ['Matcha', 'Tools for a cleaner ritual.'],
-  ['Coffee', 'Beans, filters & repeat orders.'],
+  ['Espresso', 'Puck prep, dosing & extraction.'],
+  ['Iced', 'Glassware & cold coffee.'],
+  ['Matcha', 'Whisks, bowls & tools.'],
+  ['Coffee', 'Beans & brew essentials.'],
 ];
 
 const money = (value:number) => `£${value.toFixed(2)}`;
@@ -65,7 +65,7 @@ function App() {
       })
       .catch(error => {
         console.error('Commerce connection failed.', error);
-        setCommerceError(error instanceof Error ? error.message : 'Store is temporarily unavailable');
+        setCommerceError('Store is temporarily unavailable. Please try again shortly.');
       });
   }, []);
 
@@ -83,7 +83,7 @@ function App() {
       setServerCart(await addProductToCart(product.id, 1));
       setCartOpen(true);
     } catch (error) {
-      setCommerceError(error instanceof Error ? error.message : 'Could not add item');
+      setCommerceError('We couldn’t add that item. Please try again.');
     }
   };
 
@@ -92,7 +92,7 @@ function App() {
     try {
       setServerCart(nextQty <= 0 ? await removeCartLine(lineId) : await setCartLineQuantity(lineId, nextQty));
     } catch (error) {
-      setCommerceError(error instanceof Error ? error.message : 'Could not update bag');
+      setCommerceError('We couldn’t update your bag. Please try again.');
     }
   };
 
@@ -148,7 +148,7 @@ function App() {
       </section>
 
       <section id="rituals" className="section rituals">
-        <div className="section-head"><p className="eyebrow">SHOP BY RITUAL</p><h2>Start where you drink.</h2></div>
+        <div className="section-head"><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find what you need.</h2></div>
         <div className="ritual-grid">
           {categories.map(([title, copy], index) => (
             <button className="ritual-card" onClick={() => scrollToShop(title)} key={title}>
@@ -160,35 +160,35 @@ function App() {
       </section>
 
       <section id="shop" className="section shop-section">
-        <div className="section-head split"><div><p className="eyebrow">SHOP THE EDIT</p><h2>Small upgrades.<br/>Better coffee.</h2></div><button onClick={() => setSearchOpen(true)}>Search products →</button></div>
+        <div className="section-head split"><div><p className="eyebrow">SHOP</p><h2>Coffee gear,<br/>sorted.</h2></div><button onClick={() => setSearchOpen(true)}>Search products →</button></div>
         <div className="category-tabs">{['All','Espresso','Iced','Matcha','Coffee','Setup'].map(category => <button key={category} className={activeCategory === category ? 'active':''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
         <div className="product-grid">{filteredProducts.map(product => <ProductCard key={product.variantId} product={product} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
       </section>
 
       <section className="section setup-builder">
-        <div className="setup-copy"><p className="eyebrow">BUILD YOUR SETUP</p><h2>Start with the four pieces you’ll touch every shot.</h2><p>Puck prep, dosing and a cleaner workflow—without buying an entire coffee lab.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
+        <div className="setup-copy"><p className="eyebrow">BUILD YOUR SETUP</p><h2>Four essentials for better puck prep.</h2><p>Start with the tools you use before every shot.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
         <div className="setup-stack">{products.slice(0,4).map((p,i)=><div className={`setup-item setup-${i}`} key={p.variantId}><ProductVisual product={p}/><span>{p.name}</span></div>)}</div>
       </section>
 
       <section className="section value-strip">
-        <div><strong>FREE DELIVERY OVER £30</strong><span>Easy to build a setup, easy to come back.</span></div>
-        <div><strong>CURATED FOR HOME</strong><span>Useful tools, coffee and objects worth keeping on the counter.</span></div>
-        <div><strong>SECURE BAG</strong><span>Your basket stays with you while you shop.</span></div>
+        <div><strong>FREE DELIVERY OVER £30</strong><span>Standard UK delivery is £3.99.</span></div>
+        <div><strong>HOME COFFEE GEAR</strong><span>Espresso, iced coffee, matcha and brew essentials.</span></div>
+        <div><strong>FAIRER EVERYDAY PRICES</strong><span>Useful gear without the inflated coffee-shop markup.</span></div>
       </section>
 
       <section className="section deal" id="drops">
-        <div><p className="eyebrow">THE £5 SHELF</p><h2>Good gear.<br/>No coffee tax.</h2><p>Small upgrades, rotating finds and the bits you should never have to overpay for.</p></div>
+        <div><p className="eyebrow">THE £5 SHELF</p><h2>Useful extras.<br/>Under a fiver.</h2><p>Accessories and rotating finds priced at £5 or less.</p></div>
         <button className="deal-orb" onClick={() => scrollToShop('Iced')}><span>UNDER</span><strong>£5</strong><small>SHOP →</small></button>
       </section>
 
       <section className="section just-landed">
-        <div className="section-head split"><div><p className="eyebrow">JUST LANDED</p><h2>New on the counter.</h2></div><button onClick={() => setSearchOpen(true)}>View all →</button></div>
+        <div className="section-head split"><div><p className="eyebrow">JUST LANDED</p><h2>New arrivals.</h2></div><button onClick={() => setSearchOpen(true)}>View all →</button></div>
         <div className="landed-grid">{products.slice(-3).map(p => <ProductCard key={p.variantId} product={p} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
       </section>
 
       <section className="section editorial">
         <div className="steel-panel"><div className="steel-disc"></div><div className="steel-line"></div></div>
-        <div><p className="eyebrow">BUILT FOR THE RITUAL</p><h2>Your counter should work as good as it looks.</h2><p>Useful tools, tactile materials and coffee-station objects chosen to make everyday espresso feel more considered—without turning a simple setup into a luxury-tax exercise.</p></div>
+        <div><p className="eyebrow">MADE FOR HOME COFFEE</p><h2>Simple tools for better coffee at home.</h2><p>Useful gear, sensible prices and things you’ll actually use.</p></div>
       </section>
 
       <footer><span>STANDARD DOSE™</span><span>HOME COFFEE, DIALED IN.</span></footer>
@@ -200,10 +200,10 @@ function App() {
           <div className="shipping-meter"><div><i style={{width:`${freeDeliveryProgress}%`}}/></div><span>{subtotal >= 30 ? 'You’ve unlocked free delivery.' : `${money(Math.max(0,30 - subtotal))} away from free delivery.`}</span></div>
           {commerceError && <div className="commerce-note">{commerceError}</div>}
           <div className="cart-lines">
-            {cartItems.length === 0 && <div className="empty-cart"><h3>Your bag is empty.</h3><p>Start with the small upgrades.</p><button onClick={() => {setCartOpen(false); scrollToShop('All');}}>Shop the edit</button></div>}
+            {cartItems.length === 0 && <div className="empty-cart"><h3>Your bag is empty.</h3><p>Browse the shop to get started.</p><button onClick={() => {setCartOpen(false); scrollToShop('All');}}>Shop products</button></div>}
             {cartItems.map(item => <div className="cart-line" key={item.lineId}><ProductVisual product={item.product}/><div><strong>{item.product.name}</strong><span>{money(item.product.price)}</span><div className="qty"><button onClick={() => changeQty(item.lineId,item.qty,-1)}>−</button><span>{item.qty}</span><button onClick={() => changeQty(item.lineId,item.qty,1)}>+</button></div></div></div>)}
           </div>
-          {cartItems.length > 0 && <div className="cart-footer"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><button disabled>Checkout coming next</button><small>Secure checkout is being prepared.</small></div>}
+          {cartItems.length > 0 && <div className="cart-footer"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><button disabled>Checkout currently unavailable</button></div>}
         </aside>
       </>}
 
