@@ -12,19 +12,6 @@ import {
 } from './commerce/cloudflare';
 
 type Product = CommerceProduct;
-type LocalCartItem = { product: Product; qty: number };
-
-const fallbackProducts: Product[] = [
-  { id:'puck-screen', variantId:'puck-screen', slug:'58mm-puck-screen', name:'58mm Puck Screen', price:5.95, tag:'Best seller', category:'Espresso', description:'A fine stainless screen designed to distribute water more evenly and keep the group head cleaner.', compatibility:'58mm baskets', visual:'screen', stock:'in' },
-  { id:'wdt-tool', variantId:'wdt-tool', slug:'needle-wdt-tool', name:'Needle WDT Tool', price:9.95, tag:'Dial-in essential', category:'Espresso', description:'A weighted, fine-needle distribution tool for breaking clumps and levelling your puck before tamping.', compatibility:'All espresso baskets', visual:'wdt', stock:'in' },
-  { id:'dosing-funnel', variantId:'dosing-funnel', slug:'magnetic-dosing-funnel', name:'Magnetic Dosing Funnel', price:8.95, tag:'Under £10', category:'Espresso', description:'Low-profile magnetic dosing funnel that keeps grounds in the basket while you grind and distribute.', compatibility:'58mm portafilters', visual:'funnel', stock:'in' },
-  { id:'dosing-cup', variantId:'dosing-cup', slug:'stainless-dosing-cup', name:'Stainless Dosing Cup', price:11.95, tag:'Setup upgrade', category:'Setup', description:'Brushed stainless dosing cup with a clean lip for transferring grounds without mess.', compatibility:'58mm workflows', visual:'cup', stock:'in' },
-  { id:'latte-glass', variantId:'latte-glass', slug:'ribbed-iced-latte-glass', name:'Ribbed Iced Latte Glass', price:7.95, tag:'Just landed', category:'Iced', description:'Tall ribbed glass for iced lattes, cold brew and anything layered.', visual:'glass', stock:'low' },
-  { id:'syrup-pump', variantId:'syrup-pump', slug:'minimal-syrup-pump', name:'Minimal Syrup Pump', price:4.95, tag:'£5 shelf', category:'Iced', description:'Simple reusable syrup pump sized for compact coffee stations.', visual:'pump', stock:'in' },
-  { id:'matcha-whisk', variantId:'matcha-whisk', slug:'bamboo-matcha-whisk', name:'Bamboo Matcha Whisk', price:12.95, tag:'Ritual essential', category:'Matcha', description:'Traditional bamboo whisk for smoother matcha and a cleaner morning ritual.', visual:'whisk', stock:'in' },
-  { id:'house-beans', variantId:'house-beans', slug:'house-espresso-250g', name:'House Espresso — 250g', price:10.95, tag:'Repeat order', category:'Coffee', description:'A balanced everyday espresso profile selected for milk drinks and straight shots.', visual:'bag', stock:'in' },
-];
-
 const categories = [
   ['Espresso', 'Prep, pull, repeat.'],
   ['Iced', 'Glassware, syrups & cold brew.'],
@@ -58,8 +45,7 @@ function ProductCard({ product, onView, onAdd }:{ product:Product; onView:(p:Pro
 }
 
 function App() {
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
-  const [localCart, setLocalCart] = useState<LocalCartItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [serverCart, setServerCart] = useState<CommerceCart | null>(null);
   const [commerceLive, setCommerceLive] = useState(false);
   const [commerceError, setCommerceError] = useState<string | null>(null);
@@ -73,53 +59,41 @@ function App() {
   useEffect(() => {
     Promise.all([fetchProducts(), getCart()])
       .then(([catalogue, cart]) => {
-        if (catalogue.length) setProducts(catalogue);
+        setProducts(catalogue);
         setServerCart(cart);
         setCommerceLive(true);
       })
       .catch(error => {
-        console.error('Cloudflare commerce connection failed; local fallback remains active.', error);
-        setCommerceError(error instanceof Error ? error.message : 'Commerce service unavailable');
+        console.error('Commerce connection failed.', error);
+        setCommerceError(error instanceof Error ? error.message : 'Store is temporarily unavailable');
       });
   }, []);
 
-  const cartItems = commerceLive
-    ? (serverCart?.lines || []).map(line => ({ product: line.product, qty: line.qty, lineId: line.lineId }))
-    : localCart.map(item => ({ ...item, lineId: item.product.id }));
-  const cartCount = commerceLive ? (serverCart?.totalQuantity || 0) : localCart.reduce((sum,item) => sum + item.qty, 0);
-  const subtotal = commerceLive ? (serverCart?.subtotal || 0) : localCart.reduce((sum,item) => sum + item.product.price * item.qty, 0);
+  const cartItems = (serverCart?.lines || []).map(line => ({ product: line.product, qty: line.qty, lineId: line.lineId }));
+  const cartCount = serverCart?.totalQuantity || 0;
+  const subtotal = serverCart?.subtotal || 0;
   const freeDeliveryProgress = Math.min(100, (subtotal / 30) * 100);
 
   const addToCart = async (product:Product) => {
-    if (commerceLive) {
-      try {
-        setServerCart(await addProductToCart(product.id, 1));
-      } catch (error) {
-        setCommerceError(error instanceof Error ? error.message : 'Could not add item');
-        return;
-      }
-    } else {
-      setLocalCart(items => {
-        const existing = items.find(item => item.product.variantId === product.variantId);
-        return existing
-          ? items.map(item => item.product.variantId === product.variantId ? {...item, qty:item.qty + 1} : item)
-          : [...items, {product, qty:1}];
-      });
+    if (!commerceLive) {
+      setCommerceError('Store is temporarily unavailable');
+      return;
     }
-    setCartOpen(true);
+    try {
+      setServerCart(await addProductToCart(product.id, 1));
+      setCartOpen(true);
+    } catch (error) {
+      setCommerceError(error instanceof Error ? error.message : 'Could not add item');
+    }
   };
 
   const changeQty = async (lineId:string, currentQty:number, delta:number) => {
     const nextQty = currentQty + delta;
-    if (commerceLive) {
-      try {
-        setServerCart(nextQty <= 0 ? await removeCartLine(lineId) : await setCartLineQuantity(lineId, nextQty));
-      } catch (error) {
-        setCommerceError(error instanceof Error ? error.message : 'Could not update bag');
-      }
-      return;
+    try {
+      setServerCart(nextQty <= 0 ? await removeCartLine(lineId) : await setCartLineQuantity(lineId, nextQty));
+    } catch (error) {
+      setCommerceError(error instanceof Error ? error.message : 'Could not update bag');
     }
-    setLocalCart(items => items.map(item => item.product.id === lineId ? {...item, qty:item.qty + delta} : item).filter(item => item.qty > 0));
   };
 
   const filteredProducts = useMemo(() => {
@@ -138,8 +112,7 @@ function App() {
   };
 
   const addStarterSetup = async () => {
-    const starter = fallbackProducts.slice(0,4).map(f => products.find(p => p.name.toLowerCase().includes(f.name.split(' ')[0].toLowerCase()))).filter(Boolean) as Product[];
-    for (const product of starter) await addToCart(product);
+    for (const product of products.slice(0,4)) await addToCart(product);
   };
 
   return (
@@ -199,8 +172,8 @@ function App() {
 
       <section className="section value-strip">
         <div><strong>FREE DELIVERY OVER £30</strong><span>Easy to build a setup, easy to come back.</span></div>
-        <div><strong>UK-FIRST FULFILMENT</strong><span>Delivery rules will come from the final supplier mix.</span></div>
-        <div><strong>{commerceLive ? 'LIVE CLOUDFLARE CART' : 'COMMERCE FALLBACK ACTIVE'}</strong><span>{commerceLive ? 'Catalogue and bag are backed by D1.' : 'The storefront stays usable if the commerce API is unavailable.'}</span></div>
+        <div><strong>CURATED FOR HOME</strong><span>Useful tools, coffee and objects worth keeping on the counter.</span></div>
+        <div><strong>SECURE BAG</strong><span>Your basket stays with you while you shop.</span></div>
       </section>
 
       <section className="section deal" id="drops">
@@ -230,7 +203,7 @@ function App() {
             {cartItems.length === 0 && <div className="empty-cart"><h3>Your bag is empty.</h3><p>Start with the small upgrades.</p><button onClick={() => {setCartOpen(false); scrollToShop('All');}}>Shop the edit</button></div>}
             {cartItems.map(item => <div className="cart-line" key={item.lineId}><ProductVisual product={item.product}/><div><strong>{item.product.name}</strong><span>{money(item.product.price)}</span><div className="qty"><button onClick={() => changeQty(item.lineId,item.qty,-1)}>−</button><span>{item.qty}</span><button onClick={() => changeQty(item.lineId,item.qty,1)}>+</button></div></div></div>)}
           </div>
-          {cartItems.length > 0 && <div className="cart-footer"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><button disabled>{commerceLive ? 'Checkout coming next' : 'Checkout unavailable'}</button><small>{commerceLive ? 'Your bag is stored in Cloudflare D1.' : 'Local fallback bag only — no payment is being taken.'}</small></div>}
+          {cartItems.length > 0 && <div className="cart-footer"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><button disabled>Checkout coming next</button><small>Secure checkout is being prepared.</small></div>}
         </aside>
       </>}
 
