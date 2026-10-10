@@ -121,7 +121,7 @@ function App() {
         <a className="brand" href="#top" aria-label="Standard Dose home">STANDARD DOSE</a>
         <nav aria-label="Primary navigation">
           <button onClick={() => scrollToShop('All')}>Shop</button>
-          <a href="#rituals">Rituals</a>
+          <a href="#rituals">Categories</a>
           <a href="#drops">Just landed</a>
           <button onClick={() => setSearchOpen(true)}>Search</button>
         </nav>
@@ -182,8 +182,8 @@ function App() {
       </section>
 
       <section className="section just-landed">
-        <div className="section-head split"><div><p className="eyebrow">JUST LANDED</p><h2>New arrivals.</h2></div><button onClick={() => setSearchOpen(true)}>View all →</button></div>
-        <div className="landed-grid">{products.slice(-3).map(p => <ProductCard key={p.variantId} product={p} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
+        <div className="section-head split"><div><p className="eyebrow">JUST LANDED</p><h2>New arrivals.</h2></div><button onClick={() => scrollToShop('All')}>Shop all →</button></div>
+        <div className="landed-grid">{products.filter(p => p.tag.toLowerCase().includes('just landed')).slice(0,3).map(p => <ProductCard key={p.variantId} product={p} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
       </section>
 
       <section className="section editorial">
