@@ -77,7 +77,7 @@ function render(){
   document.getElementById('productsNav').onclick=()=>document.getElementById('products').scrollIntoView({behavior:'smooth'});
   document.getElementById('addProduct').onclick=()=>productModal();
   document.getElementById('commandTrigger').onclick=openCommand;
-  document.getElementById('productSearch').oninput=e=>{searchQuery=e.target.value;page=1;render()};
+  document.getElementById('productSearch').oninput=e=>{searchQuery=e.target.value;page=1;render();const s=document.getElementById('productSearch');if(s){s.focus();s.setSelectionRange(searchQuery.length,searchQuery.length)}};
   document.getElementById('statusFilter').onchange=e=>{statusFilter=e.target.value;page=1;render()};
   document.getElementById('categoryFilter').onchange=e=>{categoryFilter=e.target.value;page=1;render()};
   document.getElementById('sortMode').onchange=e=>{sortMode=e.target.value;page=1;render()};
