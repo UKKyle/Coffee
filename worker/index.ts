@@ -3,6 +3,7 @@ type D1Database = any;
 type Env = {
   DB: D1Database;
   ADMIN_TOTP_SECRET?: string;
+  PRODUCT_MEDIA?: R2Bucket;
 };
 
 const SESSION_HOURS = 8;
@@ -473,6 +474,45 @@ async function handleApi(request: Request, env: Env) {
     return json({ products:Number(products?.c||0), lowStock:Number(low?.c||0), orders:0, revenue:0 });
   }
 
+  if (path === '/api/admin/media' && method === 'POST') {
+    const auth = await requireAdmin(request, env, true);
+    if (auth.error) return auth.error;
+    if (!env.PRODUCT_MEDIA) return json({ error:'Product media storage is not connected yet' }, { status:503 });
+
+    const form = await request.formData();
+    const file = form.get('file');
+    if (!(file instanceof File)) return json({ error:'Choose an image to upload' }, { status:400 });
+
+    const allowed = new Map([
+      ['image/jpeg','jpg'],
+      ['image/png','png'],
+      ['image/webp','webp'],
+      ['image/avif','avif'],
+    ]);
+    const ext = allowed.get(file.type);
+    if (!ext) return json({ error:'Use a JPG, PNG, WebP or AVIF image' }, { status:415 });
+    if (file.size <= 0) return json({ error:'The selected file is empty' }, { status:400 });
+    if (file.size > 10 * 1024 * 1024) return json({ error:'Images must be 10MB or smaller' }, { status:413 });
+
+    const key = `products/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${ext}`;
+    await env.PRODUCT_MEDIA.put(key, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+        cacheControl: 'public, max-age=31536000, immutable',
+      },
+      customMetadata: {
+        originalName: file.name.slice(0,180),
+      },
+    });
+
+    return json({
+      key,
+      url: `https://standarddose.co.uk/media/${key}`,
+      name: file.name,
+      size: file.size,
+    }, { status:201 });
+  }
+
   if (path === '/api/admin/products' && method === 'GET') {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
@@ -569,6 +609,21 @@ async function handleApi(request: Request, env: Env) {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/media/')) {
+      if (!env.PRODUCT_MEDIA) return new Response('Not found', { status:404 });
+      const key = decodeURIComponent(url.pathname.slice('/media/'.length));
+      if (!key || key.includes('..')) return new Response('Not found', { status:404 });
+      const object = await env.PRODUCT_MEDIA.get(key);
+      if (!object) return new Response('Not found', { status:404 });
+      const headers = new Headers();
+      object.writeHttpMetadata(headers);
+      headers.set('etag', object.httpEtag);
+      headers.set('cache-control', 'public, max-age=31536000, immutable');
+      headers.set('x-content-type-options', 'nosniff');
+      return new Response(object.body, { headers });
+    }
+
     if (url.pathname.startsWith('/api/')) {
       try {
         return await handleApi(request, env);
