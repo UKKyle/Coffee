@@ -2,15 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import {
-  addVariantToOrder,
-  adjustOrderLine,
+  addProductToCart,
   CommerceCart,
   CommerceProduct,
-  fetchVendureProducts,
-  getActiveOrder,
-  removeOrderLine,
-  vendureEnabled,
-} from './commerce/vendure';
+  fetchProducts,
+  getCart,
+  removeCartLine,
+  setCartLineQuantity,
+} from './commerce/cloudflare';
 
 type Product = CommerceProduct;
 type LocalCartItem = { product: Product; qty: number };
@@ -61,7 +60,7 @@ function ProductCard({ product, onView, onAdd }:{ product:Product; onView:(p:Pro
 function App() {
   const [products, setProducts] = useState<Product[]>(fallbackProducts);
   const [localCart, setLocalCart] = useState<LocalCartItem[]>([]);
-  const [vendureCart, setVendureCart] = useState<CommerceCart | null>(null);
+  const [serverCart, setServerCart] = useState<CommerceCart | null>(null);
   const [commerceLive, setCommerceLive] = useState(false);
   const [commerceError, setCommerceError] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
@@ -72,30 +71,29 @@ function App() {
   const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
-    if (!vendureEnabled) return;
-    Promise.all([fetchVendureProducts(), getActiveOrder()])
+    Promise.all([fetchProducts(), getCart()])
       .then(([catalogue, cart]) => {
         if (catalogue.length) setProducts(catalogue);
-        setVendureCart(cart);
+        setServerCart(cart);
         setCommerceLive(true);
       })
       .catch(error => {
-        console.error('Vendure connection failed; demo commerce remains active.', error);
+        console.error('Cloudflare commerce connection failed; local fallback remains active.', error);
         setCommerceError(error instanceof Error ? error.message : 'Commerce service unavailable');
       });
   }, []);
 
   const cartItems = commerceLive
-    ? (vendureCart?.lines || []).map(line => ({ product: line.product, qty: line.qty, lineId: line.lineId }))
+    ? (serverCart?.lines || []).map(line => ({ product: line.product, qty: line.qty, lineId: line.lineId }))
     : localCart.map(item => ({ ...item, lineId: item.product.id }));
-  const cartCount = commerceLive ? (vendureCart?.totalQuantity || 0) : localCart.reduce((sum,item) => sum + item.qty, 0);
-  const subtotal = commerceLive ? (vendureCart?.subtotal || 0) : localCart.reduce((sum,item) => sum + item.product.price * item.qty, 0);
+  const cartCount = commerceLive ? (serverCart?.totalQuantity || 0) : localCart.reduce((sum,item) => sum + item.qty, 0);
+  const subtotal = commerceLive ? (serverCart?.subtotal || 0) : localCart.reduce((sum,item) => sum + item.product.price * item.qty, 0);
   const freeDeliveryProgress = Math.min(100, (subtotal / 30) * 100);
 
   const addToCart = async (product:Product) => {
     if (commerceLive) {
       try {
-        setVendureCart(await addVariantToOrder(product.variantId, 1));
+        setServerCart(await addProductToCart(product.id, 1));
       } catch (error) {
         setCommerceError(error instanceof Error ? error.message : 'Could not add item');
         return;
@@ -115,7 +113,7 @@ function App() {
     const nextQty = currentQty + delta;
     if (commerceLive) {
       try {
-        setVendureCart(nextQty <= 0 ? await removeOrderLine(lineId) : await adjustOrderLine(lineId, nextQty));
+        setServerCart(nextQty <= 0 ? await removeCartLine(lineId) : await setCartLineQuantity(lineId, nextQty));
       } catch (error) {
         setCommerceError(error instanceof Error ? error.message : 'Could not update bag');
       }
@@ -202,7 +200,7 @@ function App() {
       <section className="section value-strip">
         <div><strong>FREE DELIVERY OVER £30</strong><span>Easy to build a setup, easy to come back.</span></div>
         <div><strong>UK-FIRST FULFILMENT</strong><span>Delivery rules will come from the final supplier mix.</span></div>
-        <div><strong>{commerceLive ? 'LIVE VENDURE CART' : 'COMMERCE FALLBACK ACTIVE'}</strong><span>{commerceLive ? 'Catalogue and bag are server-backed.' : 'The public review site stays usable until Vendure is deployed.'}</span></div>
+        <div><strong>{commerceLive ? 'LIVE CLOUDFLARE CART' : 'COMMERCE FALLBACK ACTIVE'}</strong><span>{commerceLive ? 'Catalogue and bag are backed by D1.' : 'The storefront stays usable if the commerce API is unavailable.'}</span></div>
       </section>
 
       <section className="section deal" id="drops">
@@ -232,7 +230,7 @@ function App() {
             {cartItems.length === 0 && <div className="empty-cart"><h3>Your bag is empty.</h3><p>Start with the small upgrades.</p><button onClick={() => {setCartOpen(false); scrollToShop('All');}}>Shop the edit</button></div>}
             {cartItems.map(item => <div className="cart-line" key={item.lineId}><ProductVisual product={item.product}/><div><strong>{item.product.name}</strong><span>{money(item.product.price)}</span><div className="qty"><button onClick={() => changeQty(item.lineId,item.qty,-1)}>−</button><span>{item.qty}</span><button onClick={() => changeQty(item.lineId,item.qty,1)}>+</button></div></div></div>)}
           </div>
-          {cartItems.length > 0 && <div className="cart-footer"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><button disabled={!commerceLive}>{commerceLive ? 'Continue to checkout' : 'Checkout activates with Vendure'}</button><small>{commerceLive ? `Order ${vendureCart?.code || ''} is stored in Vendure.` : 'Demo bag only — no payment is being taken.'}</small></div>}
+          {cartItems.length > 0 && <div className="cart-footer"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><button disabled>{commerceLive ? 'Checkout coming next' : 'Checkout unavailable'}</button><small>{commerceLive ? 'Your bag is stored in Cloudflare D1.' : 'Local fallback bag only — no payment is being taken.'}</small></div>}
         </aside>
       </>}
 
