@@ -31,7 +31,7 @@ function ProductCard({ product, onView, onAdd }:{ product:Product; onView:(p:Pro
     <article className="product-card">
       <button className="product-image-button" onClick={() => onView(product)} aria-label={`View ${product.name}`}>
         <ProductVisual product={product}/>
-        <span className="product-badge">{product.tag}</span>
+        {product.tag && <span className="product-badge">{product.tag}</span>}
       </button>
       <div className="product-meta">
         <button className="product-name" onClick={() => onView(product)}>{product.name}</button>
@@ -111,8 +111,13 @@ function App() {
     requestAnimationFrame(() => document.querySelector('#shop')?.scrollIntoView({behavior:'smooth'}));
   };
 
+  const starterSetup = useMemo(() => {
+    const ids = ['a1-tamper-48-57','a1-frothing-thermometer','a1-milk-jug-600','a1-shot-glass-60'];
+    return ids.map(id => products.find(product => product.id === id)).filter(Boolean) as Product[];
+  }, [products]);
+
   const addStarterSetup = async () => {
-    for (const product of products.slice(0,4)) await addToCart(product);
+    for (const product of starterSetup) await addToCart(product);
   };
 
   return (
@@ -166,8 +171,8 @@ function App() {
       </section>
 
       <section className="section setup-builder">
-        <div className="setup-copy"><h2>Four essentials for better puck prep.</h2><p>Start with the tools you use before every shot.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
-        <div className="setup-stack">{products.slice(0,4).map((p,i)=><div className={`setup-item setup-${i}`} key={p.variantId}><ProductVisual product={p}/><span>{p.name}</span></div>)}</div>
+        <div className="setup-copy"><h2>A practical espresso starter setup.</h2><p>Four useful pieces for dosing, steaming and serving at home.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
+        <div className="setup-stack">{starterSetup.map((p,i)=><div className={`setup-item setup-${i}`} key={p.variantId}><ProductVisual product={p}/><span>{p.name}</span></div>)}</div>
       </section>
 
       <section className="section value-strip">
@@ -177,8 +182,8 @@ function App() {
       </section>
 
       <section className="section deal" id="drops">
-        <div><p className="eyebrow">THE £5 SHELF</p><h2>Useful extras.<br/>Under a fiver.</h2><p>Accessories and rotating finds priced at £5 or less.</p></div>
-        <button className="deal-orb" onClick={() => scrollToShop('Iced')}><span>UNDER</span><strong>£5</strong><small>SHOP →</small></button>
+        <div><p className="eyebrow">UNDER £7</p><h2>Small upgrades.<br/>Small spend.</h2><p>Useful coffee extras priced below £7.</p></div>
+        <button className="deal-orb" onClick={() => scrollToShop('Espresso')}><span>UNDER</span><strong>£7</strong><small>SHOP →</small></button>
       </section>
 
       <section className="section just-landed">
@@ -209,7 +214,7 @@ function App() {
 
       {searchOpen && <div className="search-overlay">
         <div className="search-head"><span>SEARCH STANDARD DOSE</span><button onClick={() => {setSearchOpen(false); setQuery('');}}>×</button></div>
-        <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search puck screens, glassware, coffee…"/>
+        <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search milk jugs, matcha, syrups…"/>
         <div className="search-results">{(query ? filteredProducts : products.slice(0,5)).map(product => <button key={product.variantId} onClick={() => {setSearchOpen(false); setQuery(''); setActiveProduct(product);}}><ProductVisual product={product}/><span><strong>{product.name}</strong><small>{product.category} · {money(product.price)}</small></span><b>↗</b></button>)}</div>
       </div>}
 
