@@ -223,6 +223,28 @@ async function ensureSchema(db: D1Database) {
     )));
     await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('a1_launch_catalogue_v1','imported')").run();
   }
+
+  const liveMarker = await db.prepare("SELECT value FROM settings WHERE key='a1_launch_live_v1'").first();
+  if (!liveMarker) {
+    await db.prepare("UPDATE products SET enabled=1, updated_at=CURRENT_TIMESTAMP WHERE supplier='A1 Coffee'").run();
+    await db.prepare("UPDATE products SET tag='' WHERE supplier='A1 Coffee'").run();
+    const tagStmt = db.prepare("UPDATE products SET tag='Just landed', updated_at=CURRENT_TIMESTAMP WHERE id=?");
+    await db.batch([
+      tagStmt.bind('a1-tamper-48-57'),
+      tagStmt.bind('a1-milk-jug-600'),
+      tagStmt.bind('a1-perfect-ted-strawberry'),
+    ]);
+    await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('a1_launch_live_v1','active')").run();
+  }
+}
+
+function isDropshipProduct(row: any) {
+  return String(row.fulfilment_method || '').toLowerCase().includes('dropship');
+}
+
+function publicStockStatus(row: any) {
+  if (row.enabled && isDropshipProduct(row)) return 'in';
+  return row.stock_status;
 }
 
 function mapProduct(row: any) {
@@ -238,7 +260,7 @@ function mapProduct(row: any) {
     description: row.description,
     compatibility: row.compatibility || undefined,
     visual: row.visual,
-    stock: row.stock_status,
+    stock: publicStockStatus(row),
     image: row.image_url || undefined,
     stockOnHand: row.stock_on_hand,
     sortOrder: row.sort_order,
@@ -342,8 +364,8 @@ async function handleApi(request: Request, env: Env) {
     const body = await request.json() as any;
     const productId = String(body.productId || '');
     const quantity = Math.max(1, Math.min(25, Number(body.quantity || 1)));
-    const product = await env.DB.prepare('SELECT id, stock_status, stock_on_hand FROM products WHERE id=? AND enabled=1').bind(productId).first();
-    if (!product || product.stock_status === 'out' || product.stock_on_hand <= 0) return json({ error:'Product unavailable' }, { status:409 });
+    const product = await env.DB.prepare('SELECT id, stock_status, stock_on_hand, fulfilment_method, enabled FROM products WHERE id=? AND enabled=1').bind(productId).first();
+    if (!product || (!isDropshipProduct(product) && (product.stock_status === 'out' || product.stock_on_hand <= 0))) return json({ error:'Product unavailable' }, { status:409 });
     const cart = await getOrCreateCart(request, env);
     await env.DB.prepare(`INSERT INTO cart_items(cart_id,product_id,quantity) VALUES (?,?,?)
       ON CONFLICT(cart_id,product_id) DO UPDATE SET quantity=MIN(quantity+excluded.quantity,25)`).bind(cart.id, productId, quantity).run();
