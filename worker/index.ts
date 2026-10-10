@@ -236,6 +236,13 @@ async function ensureSchema(db: D1Database) {
     ]);
     await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('a1_launch_live_v1','active')").run();
   }
+
+  const imageMarker = await db.prepare("SELECT value FROM settings WHERE key='a1_supplier_images_v1'").first();
+  if (!imageMarker) {
+    const stmt = db.prepare("UPDATE products SET image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND supplier='A1 Coffee'");
+    await db.batch(launchCatalogue.map(p => stmt.bind('https://standarddose.co.uk/media/supplier/'+p[0], p[0])));
+    await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('a1_supplier_images_v1','assigned')").run();
+  }
 }
 
 function isDropshipProduct(row: any) {
@@ -622,9 +629,69 @@ async function handleApi(request: Request, env: Env) {
   return json({ error:'Not found' }, { status:404 });
 }
 
+async function resolveA1Image(row: any) {
+  const productUrl = String(row.supplier_url || '');
+  if (productUrl.includes('/products/')) {
+    const page = await fetch(productUrl, { headers:{ 'user-agent':'StandardDose/1.0' } });
+    if (page.ok) {
+      const html = await page.text();
+      const match = html.match(/<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/i)
+        || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::secure_url)?["']/i);
+      if (match?.[1]) return match[1].replace(/&amp;/g,'&');
+    }
+  }
+
+  const query = String(row.name || '')
+    .replace(/\s+[—-]\s+\d+\s*(ml|l|g|kg)$/i,'')
+    .replace(/^Stainless\s+/i,'')
+    .trim();
+  const search = await fetch('https://a1coffee.net/search/suggest.json?q='+encodeURIComponent(query)+'&resources[type]=product&resources[limit]=5', {
+    headers:{ 'user-agent':'StandardDose/1.0', 'accept':'application/json' }
+  });
+  if (!search.ok) return null;
+  const data:any = await search.json().catch(()=>null);
+  const products = data?.resources?.results?.products || [];
+  const wantedSku = String(row.supplier_sku || '').toLowerCase();
+  const wantedName = String(row.name || '').toLowerCase();
+  const best = products.find((p:any)=>wantedSku && String(p.sku||'').toLowerCase()===wantedSku)
+    || products.find((p:any)=>wantedName.includes(String(p.title||'').toLowerCase()) || String(p.title||'').toLowerCase().includes(wantedName.replace(/\s+[—-].*$/,'')))
+    || products[0];
+  return best?.featured_image?.url || best?.image || null;
+}
+
+async function supplierMedia(request: Request, env: Env, id: string) {
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method:'GET' });
+  const hit = await cache.match(cacheKey);
+  if (hit) return hit;
+
+  await ensureSchema(env.DB);
+  const row = await env.DB.prepare('SELECT id,name,supplier,supplier_sku,supplier_url FROM products WHERE id=?').bind(id).first();
+  if (!row || row.supplier !== 'A1 Coffee') return new Response('Not found', { status:404 });
+
+  const imageUrl = await resolveA1Image(row);
+  if (!imageUrl) return new Response('Not found', { status:404 });
+
+  const source = await fetch(imageUrl, { headers:{ 'user-agent':'StandardDose/1.0', 'accept':'image/avif,image/webp,image/*,*/*' } });
+  if (!source.ok || !String(source.headers.get('content-type')||'').startsWith('image/')) return new Response('Not found', { status:404 });
+
+  const headers = new Headers();
+  headers.set('content-type', source.headers.get('content-type') || 'image/jpeg');
+  headers.set('cache-control','public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000');
+  headers.set('x-content-type-options','nosniff');
+  const response = new Response(source.body, { status:200, headers });
+  await cache.put(cacheKey, response.clone());
+  return response;
+}
+
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+
+    const supplierMediaMatch = url.pathname.match(/^\/media\/supplier\/([^/]+)$/);
+    if (supplierMediaMatch) {
+      return supplierMedia(request, env, decodeURIComponent(supplierMediaMatch[1]));
+    }
 
     if (url.pathname.startsWith('/media/')) {
       await ensureSchema(env.DB);
