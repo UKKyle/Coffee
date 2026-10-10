@@ -3,7 +3,6 @@ type D1Database = any;
 type Env = {
   DB: D1Database;
   ADMIN_TOTP_SECRET?: string;
-  PRODUCT_MEDIA?: R2Bucket;
 };
 
 const SESSION_HOURS = 8;
@@ -64,6 +63,14 @@ CREATE TABLE IF NOT EXISTS products (
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS product_media (
+  id TEXT PRIMARY KEY,
+  content_type TEXT NOT NULL,
+  data BLOB NOT NULL,
+  byte_size INTEGER NOT NULL,
+  original_name TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS carts (
   id TEXT PRIMARY KEY,
@@ -477,37 +484,24 @@ async function handleApi(request: Request, env: Env) {
   if (path === '/api/admin/media' && method === 'POST') {
     const auth = await requireAdmin(request, env, true);
     if (auth.error) return auth.error;
-    if (!env.PRODUCT_MEDIA) return json({ error:'Product media storage is not connected yet' }, { status:503 });
 
     const form = await request.formData();
     const file = form.get('file');
     if (!(file instanceof File)) return json({ error:'Choose an image to upload' }, { status:400 });
 
-    const allowed = new Map([
-      ['image/jpeg','jpg'],
-      ['image/png','png'],
-      ['image/webp','webp'],
-      ['image/avif','avif'],
-    ]);
-    const ext = allowed.get(file.type);
-    if (!ext) return json({ error:'Use a JPG, PNG, WebP or AVIF image' }, { status:415 });
+    const allowed = new Set(['image/jpeg','image/png','image/webp','image/avif']);
+    if (!allowed.has(file.type)) return json({ error:'Use a JPG, PNG, WebP or AVIF image' }, { status:415 });
     if (file.size <= 0) return json({ error:'The selected file is empty' }, { status:400 });
-    if (file.size > 10 * 1024 * 1024) return json({ error:'Images must be 10MB or smaller' }, { status:413 });
+    if (file.size > 1_800_000) return json({ error:'Image is too large after optimisation. Please choose a smaller image.' }, { status:413 });
 
-    const key = `products/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${ext}`;
-    await env.PRODUCT_MEDIA.put(key, file.stream(), {
-      httpMetadata: {
-        contentType: file.type,
-        cacheControl: 'public, max-age=31536000, immutable',
-      },
-      customMetadata: {
-        originalName: file.name.slice(0,180),
-      },
-    });
+    const id = crypto.randomUUID();
+    const bytes = await file.arrayBuffer();
+    await env.DB.prepare(`INSERT INTO product_media(id,content_type,data,byte_size,original_name)
+      VALUES (?,?,?,?,?)`).bind(id,file.type,bytes,file.size,file.name.slice(0,180)).run();
 
     return json({
-      key,
-      url: `https://standarddose.co.uk/media/${key}`,
+      id,
+      url: `https://standarddose.co.uk/media/${id}`,
       name: file.name,
       size: file.size,
     }, { status:201 });
@@ -611,17 +605,17 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/media/')) {
-      if (!env.PRODUCT_MEDIA) return new Response('Not found', { status:404 });
-      const key = decodeURIComponent(url.pathname.slice('/media/'.length));
-      if (!key || key.includes('..')) return new Response('Not found', { status:404 });
-      const object = await env.PRODUCT_MEDIA.get(key);
-      if (!object) return new Response('Not found', { status:404 });
-      const headers = new Headers();
-      object.writeHttpMetadata(headers);
-      headers.set('etag', object.httpEtag);
-      headers.set('cache-control', 'public, max-age=31536000, immutable');
-      headers.set('x-content-type-options', 'nosniff');
-      return new Response(object.body, { headers });
+      await ensureSchema(env.DB);
+      const id = decodeURIComponent(url.pathname.slice('/media/'.length));
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return new Response('Not found', { status:404 });
+      const media = await env.DB.prepare('SELECT content_type,data FROM product_media WHERE id=?').bind(id).first();
+      if (!media) return new Response('Not found', { status:404 });
+      const headers = new Headers({
+        'content-type': String(media.content_type),
+        'cache-control': 'public, max-age=31536000, immutable',
+        'x-content-type-options': 'nosniff',
+      });
+      return new Response(media.data, { headers });
     }
 
     if (url.pathname.startsWith('/api/')) {
