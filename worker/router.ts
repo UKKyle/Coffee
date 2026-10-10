@@ -5,6 +5,7 @@ type Env = {
   DB: any;
   ASSETS: { fetch(request: Request): Promise<Response> };
   ADMIN_TOTP_SECRET?: string;
+  PRODUCT_MEDIA?: R2Bucket;
 };
 
 const INTERNAL_HOST = 'internal.standarddose.co.uk';
@@ -57,6 +58,10 @@ export default {
     // Never expose admin UI or admin APIs from the public storefront host.
     if (isAdminPath || isAdminApi) {
       return notFound();
+    }
+
+    if (url.pathname.startsWith('/media/')) {
+      return commerceWorker.fetch(request, env, ctx as any);
     }
 
     if (url.pathname.startsWith('/api/')) {
