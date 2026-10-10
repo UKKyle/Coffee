@@ -5,7 +5,6 @@ type Env = {
   ADMIN_TOTP_SECRET?: string;
 };
 
-const ADMIN_PASSWORD_SHA256 = 'c65c1e5b717230deba8add4273766ab9d8fb5ed14788a7181bed7defac103704';
 const SESSION_HOURS = 8;
 const CART_COOKIE = 'sd_cart';
 const ADMIN_COOKIE = 'sd_admin';
@@ -267,6 +266,14 @@ async function loginRateKey(request: Request) {
   return await sha256(ip);
 }
 
+function hasInternalAccess(request: Request) {
+  const url = new URL(request.url);
+  if (url.hostname.toLowerCase() !== 'internal.standarddose.co.uk') return false;
+  if (!request.headers.get('cf-access-jwt-assertion')) return false;
+  const origin = request.headers.get('origin');
+  return !origin || origin === 'https://internal.standarddose.co.uk';
+}
+
 async function handleApi(request: Request, env: Env) {
   await ensureSchema(env.DB);
   const url = new URL(request.url);
@@ -340,20 +347,19 @@ async function handleApi(request: Request, env: Env) {
     const security = await getSecurity(env.DB);
     let valid = false;
 
-    if (security) {
-      const email = String(body.email || '').trim().toLowerCase();
-      const password = String(body.password || '');
-      const code = String(body.code || '').replace(/\s+/g,'');
-      const hash = await passwordHash(password, security.password_salt);
-      const totpSecret = String(env.ADMIN_TOTP_SECRET || '');
-      valid = Boolean(totpSecret)
-        && email === String(security.approved_email).toLowerCase()
-        && hash === security.password_hash
-        && await verifyTotp(totpSecret, code);
-    } else {
-      const hash = await sha256(String(body.password || ''));
-      valid = hash === ADMIN_PASSWORD_SHA256;
+    if (!security) {
+      return json({ error:'Admin security setup required', setupRequired:true }, { status:409 });
     }
+
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const code = String(body.code || '').replace(/\s+/g,'');
+    const hash = await passwordHash(password, security.password_salt);
+    const totpSecret = String(env.ADMIN_TOTP_SECRET || '');
+    valid = Boolean(totpSecret)
+      && email === String(security.approved_email).toLowerCase()
+      && hash === security.password_hash
+      && await verifyTotp(totpSecret, code);
 
     if (!valid) {
       const sameWindow = attempt && now - Date.parse(attempt.window_started_at) < 15*60*1000;
@@ -369,21 +375,19 @@ async function handleApi(request: Request, env: Env) {
     const csrf = crypto.randomUUID();
     const expires = new Date(Date.now()+SESSION_HOURS*60*60*1000).toISOString();
     await env.DB.prepare('INSERT INTO admin_sessions(token,csrf_token,expires_at) VALUES (?,?,?)').bind(token,csrf,expires).run();
-    const response = json({ ok:true, csrfToken:csrf, setupRequired:!security });
+    const response = json({ ok:true, csrfToken:csrf, setupRequired:false });
     response.headers.append('set-cookie', secureCookie(ADMIN_COOKIE, token, SESSION_HOURS*60*60));
     return response;
   }
 
   if (path === '/api/admin/security/bootstrap' && method === 'GET') {
-    const auth = await requireAdmin(request, env);
-    if (auth.error) return auth.error;
+    if (!hasInternalAccess(request)) return json({ error:'Unauthorized' }, { status:401 });
     const security = await getSecurity(env.DB);
     return json({ configured:Boolean(security), totpReady:Boolean(env.ADMIN_TOTP_SECRET) });
   }
 
   if (path === '/api/admin/security/setup' && method === 'POST') {
-    const auth = await requireAdmin(request, env, true);
-    if (auth.error) return auth.error;
+    if (!hasInternalAccess(request)) return json({ error:'Unauthorized' }, { status:401 });
     if (await getSecurity(env.DB)) return json({ error:'Security is already configured' }, { status:409 });
 
     const body = await request.json() as any;
@@ -401,8 +405,16 @@ async function handleApi(request: Request, env: Env) {
     const hash = await passwordHash(password, salt);
     await env.DB.prepare(`INSERT INTO admin_security(id,approved_email,password_salt,password_hash,totp_secret)
       VALUES (1,?,?,?,?)`).bind(email,salt,hash,'managed-secret').run();
-    await env.DB.prepare('DELETE FROM admin_sessions WHERE token<>?').bind(auth.session.token).run();
-    return json({ ok:true, approvedEmail:email });
+
+    await env.DB.prepare('DELETE FROM admin_sessions').run();
+    const token = crypto.randomUUID() + crypto.randomUUID();
+    const csrf = crypto.randomUUID();
+    const expires = new Date(Date.now()+SESSION_HOURS*60*60*1000).toISOString();
+    await env.DB.prepare('INSERT INTO admin_sessions(token,csrf_token,expires_at) VALUES (?,?,?)').bind(token,csrf,expires).run();
+
+    const response = json({ ok:true, approvedEmail:email, csrfToken:csrf });
+    response.headers.append('set-cookie', secureCookie(ADMIN_COOKIE, token, SESSION_HOURS*60*60));
+    return response;
   }
 
   if (path === '/api/admin/session' && method === 'GET') {
