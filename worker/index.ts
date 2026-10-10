@@ -103,7 +103,12 @@ async function sha256(value: string) {
 }
 
 async function ensureSchema(db: D1Database) {
-  await db.exec(schema);
+  const statements = schema
+    .split(';')
+    .map(statement => statement.trim())
+    .filter(Boolean)
+    .map(statement => db.prepare(statement));
+  if (statements.length) await db.batch(statements);
   const row = await db.prepare('SELECT COUNT(*) AS c FROM products').first();
   if (Number(row?.c || 0) === 0) {
     const stmt = db.prepare(`INSERT INTO products
