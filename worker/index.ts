@@ -9,17 +9,6 @@ const SESSION_HOURS = 8;
 const CART_COOKIE = 'sd_cart';
 const ADMIN_COOKIE = 'sd_admin';
 
-const seedProducts = [
-  ['puck-screen','puck-screen','58mm-puck-screen','58mm Puck Screen',595,'Best seller','Espresso','A fine stainless screen designed to distribute water more evenly and keep the group head cleaner.','58mm baskets','screen','in'],
-  ['wdt-tool','wdt-tool','needle-wdt-tool','Needle WDT Tool',995,'Dial-in essential','Espresso','A weighted, fine-needle distribution tool for breaking clumps and levelling your puck before tamping.','All espresso baskets','wdt','in'],
-  ['dosing-funnel','dosing-funnel','magnetic-dosing-funnel','Magnetic Dosing Funnel',895,'Under £10','Espresso','Low-profile magnetic dosing funnel that keeps grounds in the basket while you grind and distribute.','58mm portafilters','funnel','in'],
-  ['dosing-cup','dosing-cup','stainless-dosing-cup','Stainless Dosing Cup',1195,'Setup upgrade','Setup','Brushed stainless dosing cup with a clean lip for transferring grounds without mess.','58mm workflows','cup','in'],
-  ['latte-glass','latte-glass','ribbed-iced-latte-glass','Ribbed Iced Latte Glass',795,'Just landed','Iced','Tall ribbed glass for iced lattes, cold brew and anything layered.','','glass','low'],
-  ['syrup-pump','syrup-pump','minimal-syrup-pump','Minimal Syrup Pump',495,'£5 shelf','Iced','Simple reusable syrup pump sized for compact coffee stations.','','pump','in'],
-  ['matcha-whisk','matcha-whisk','bamboo-matcha-whisk','Bamboo Matcha Whisk',1295,'Ritual essential','Matcha','Traditional bamboo whisk for smoother matcha and a cleaner morning ritual.','','whisk','in'],
-  ['house-beans','house-beans','house-espresso-250g','House Espresso — 250g',1095,'Repeat order','Coffee','A balanced everyday espresso profile selected for milk drinks and straight shots.','','bag','in'],
-] as const;
-
 const launchCatalogue = [
   ['a1-shot-glass-60','A1-SHOTGLASS60','espresso-shot-glass-60ml','Espresso Shot Glass — 60ml',595,'','Espresso','A simple 60ml shot glass for pulling and measuring espresso.','','glass',239,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
   ['a1-shot-pot-60','A1-SHOTPOT60','stainless-espresso-shot-cup-60ml','Stainless Espresso Shot Cup — 60ml',695,'','Espresso','Compact stainless shot cup for espresso, split shots and measuring output.','','cup',299,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
@@ -205,12 +194,14 @@ async function ensureSchema(db: D1Database) {
     .filter(Boolean)
     .map(statement => db.prepare(statement));
   if (statements.length) await db.batch(statements);
-  const row = await db.prepare('SELECT COUNT(*) AS c FROM products').first();
-  if (Number(row?.c || 0) === 0) {
-    const stmt = db.prepare(`INSERT INTO products
-      (id,variant_id,slug,name,price_pence,tag,category,description,compatibility,visual,stock_status,stock_on_hand,sort_order)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
-    await db.batch(seedProducts.map((p, i) => stmt.bind(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8] || null,p[9],p[10],p[10] === 'out' ? 0 : p[10] === 'low' ? 6 : 50,i)));
+  const placeholderCleanup = await db.prepare("SELECT value FROM settings WHERE key='placeholder_catalogue_removed_v1'").first();
+  if (!placeholderCleanup) {
+    const placeholderIds = ['puck-screen','wdt-tool','dosing-funnel','dosing-cup','latte-glass','syrup-pump','matcha-whisk','house-beans'];
+    const deleteCartItems = db.prepare('DELETE FROM cart_items WHERE product_id=?');
+    const deleteProducts = db.prepare('DELETE FROM products WHERE id=?');
+    await db.batch(placeholderIds.map(id => deleteCartItems.bind(id)));
+    await db.batch(placeholderIds.map(id => deleteProducts.bind(id)));
+    await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('placeholder_catalogue_removed_v1','done')").run();
   }
 
   const launchMarker = await db.prepare("SELECT value FROM settings WHERE key='a1_launch_catalogue_v1'").first();
