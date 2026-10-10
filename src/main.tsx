@@ -148,7 +148,7 @@ function App() {
       </section>
 
       <section id="rituals" className="section rituals">
-        <div className="section-head"><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find what you need.</h2></div>
+        <div className="section-head"><p className="eyebrow">SHOP BY RITUAL</p><h2>Start where you drink.</h2></div>
         <div className="ritual-grid">
           {categories.map(([title, copy], index) => (
             <button className="ritual-card" onClick={() => scrollToShop(title)} key={title}>
@@ -160,13 +160,13 @@ function App() {
       </section>
 
       <section id="shop" className="section shop-section">
-        <div className="section-head split"><div><p className="eyebrow">SHOP</p><h2>Coffee gear,<br/>sorted.</h2></div><button onClick={() => setSearchOpen(true)}>Search products →</button></div>
+        <div className="section-head split"><div><p className="eyebrow">SHOP THE EDIT</p><h2>Small upgrades.<br/>Better coffee.</h2></div><button onClick={() => setSearchOpen(true)}>Search products →</button></div>
         <div className="category-tabs">{['All','Espresso','Iced','Matcha','Coffee','Setup'].map(category => <button key={category} className={activeCategory === category ? 'active':''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
         <div className="product-grid">{filteredProducts.map(product => <ProductCard key={product.variantId} product={product} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
       </section>
 
       <section className="section setup-builder">
-        <div className="setup-copy"><p className="eyebrow">BUILD YOUR SETUP</p><h2>Four essentials for better puck prep.</h2><p>Start with the tools you use before every shot.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
+        <div className="setup-copy"><h2>Four essentials for better puck prep.</h2><p>Start with the tools you use before every shot.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
         <div className="setup-stack">{products.slice(0,4).map((p,i)=><div className={`setup-item setup-${i}`} key={p.variantId}><ProductVisual product={p}/><span>{p.name}</span></div>)}</div>
       </section>
 
@@ -188,7 +188,7 @@ function App() {
 
       <section className="section editorial">
         <div className="steel-panel"><div className="steel-disc"></div><div className="steel-line"></div></div>
-        <div><p className="eyebrow">MADE FOR HOME COFFEE</p><h2>Simple tools for better coffee at home.</h2><p>Useful gear, sensible prices and things you’ll actually use.</p></div>
+        <div><h2>Simple tools for better coffee at home.</h2><p>Useful gear, sensible prices and things you’ll actually use.</p></div>
       </section>
 
       <footer><span>STANDARD DOSE™</span><span>HOME COFFEE, DIALED IN.</span></footer>
