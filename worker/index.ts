@@ -20,6 +20,34 @@ const seedProducts = [
   ['house-beans','house-beans','house-espresso-250g','House Espresso — 250g',1095,'Repeat order','Coffee','A balanced everyday espresso profile selected for milk drinks and straight shots.','','bag','in'],
 ] as const;
 
+const launchCatalogue = [
+  ['a1-shot-glass-60','A1-SHOTGLASS60','espresso-shot-glass-60ml','Espresso Shot Glass — 60ml',595,'','Espresso','A simple 60ml shot glass for pulling and measuring espresso.','','glass',239,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-shot-pot-60','A1-SHOTPOT60','stainless-espresso-shot-cup-60ml','Stainless Espresso Shot Cup — 60ml',695,'','Espresso','Compact stainless shot cup for espresso, split shots and measuring output.','','cup',299,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-shot-pot-90','A1-SHOTPOT90','stainless-espresso-shot-cup-90ml','Stainless Espresso Shot Cup — 90ml',795,'','Espresso','A 90ml stainless shot cup with extra room for longer pulls and split shots.','','cup',329,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-shot-pot-180','A1-SHOTPOT180','stainless-espresso-shot-cup-180ml','Stainless Espresso Shot Cup — 180ml',795,'','Espresso','A larger stainless shot cup for espresso, milk prep and small serves.','','cup',359,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-tamper-48-57','TAMPER01','dual-size-espresso-tamper-48-57mm','Dual-Size Espresso Tamper — 48/57mm',595,'','Espresso','Lightweight double-ended tamper with 48mm and 57mm bases for domestic espresso baskets.','48mm / 57mm','cup',204,'A1 Coffee','TAMPER01','https://a1coffee.net/products/coffee-tamper-48mm-57mm','Manual dropship','UK delivery'],
+  ['a1-frothing-thermometer','THERMO','milk-frothing-thermometer','Milk Frothing Thermometer',1295,'','Espresso','Clip-on milk thermometer for monitoring steaming temperature in jugs up to 1 litre.','Milk jugs up to 1L','cup',839,'A1 Coffee','THERMO','https://a1coffee.net/collections/machines-equipment/products/milk-frothing-thermometer','Manual dropship','UK delivery'],
+  ['a1-milk-jug-600','JUG02','stainless-milk-jug-600ml','Stainless Milk Jug — 600ml',1495,'','Espresso','600ml stainless milk jug with etched measurements and a narrow pouring spout.','','cup',959,'A1 Coffee','JUG02','https://a1coffee.net/products/milk-frothing-jug-600ml','Manual dropship','UK delivery'],
+  ['a1-milk-jug-1l','A1-JUG1L','stainless-milk-jug-1l','Stainless Milk Jug — 1L',1695,'','Espresso','Large stainless milk jug for steaming multiple drinks or larger milk volumes.','','cup',1079,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-cleaning-brush','A1-CLEANBRUSH','espresso-cleaning-brush','Espresso Cleaning Brush',1495,'','Setup','Brush for cleaning espresso group heads and hard-to-reach coffee residue.','','cup',959,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-e61-seal','A1-E61SEAL','e61-silicone-group-seal','E61 Silicone Group Seal',695,'','Setup','Replacement silicone group seal for compatible E61 espresso machines.','E61 group heads','cup',359,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-cafelat-mat','A1-CAFELATMAT','cafelat-corner-tamping-mat','Cafelat Corner Tamping Mat',2795,'','Setup','Corner tamping mat designed to protect worktops and provide a stable tamping surface.','','cup',2039,'A1 Coffee','','https://a1coffee.net/collections/machines-equipment','Manual dropship','UK delivery'],
+  ['a1-simply-pump','PUMP02','simply-syrup-pump','Simply Syrup Pump',695,'','Iced','Reusable portion pump made for Simply 1 litre syrup bottles.','Simply 1L syrups','pump',359,'A1 Coffee','PUMP02','https://a1coffee.net/products/syrup-pump-for-1-litre-ibc-syrups','Manual dropship','UK delivery'],
+  ['a1-simply-vanilla','VANILLASYRUP','simply-vanilla-syrup-1l','Simply Vanilla Syrup — 1L',1195,'','Iced','Vanilla syrup for lattes, iced coffee, milkshakes and desserts.','','bag',839,'A1 Coffee','VANILLASYRUP','https://a1coffee.net/products/vanilla-flavouring-syrup-1-litre','Manual dropship','UK delivery'],
+  ['a1-simply-caramel','A1-CARAMEL','simply-caramel-syrup-1l','Simply Caramel Syrup — 1L',1195,'','Iced','Caramel syrup for hot or iced coffee and milk drinks.','','bag',839,'A1 Coffee','','https://a1coffee.net/collections/syrups-flavours-simply-simply-1-litre-syrups','Manual dropship','UK delivery'],
+  ['a1-simply-salted-caramel','CARAMELSYRUP08','simply-salted-caramel-syrup-1l','Simply Salted Caramel Syrup — 1L',1195,'','Iced','Salted caramel syrup for lattes, iced coffee and hot chocolate.','','bag',839,'A1 Coffee','CARAMELSYRUP08','https://a1coffee.net/products/salted-caramel-flavouring-syrup-1-litre','Manual dropship','UK delivery'],
+  ['a1-simply-hazelnut','HAZELNUTSYRUP','simply-hazelnut-syrup-1l','Simply Hazelnut Syrup — 1L',1195,'','Iced','Hazelnut-flavour syrup for coffee, milk drinks and desserts.','','bag',839,'A1 Coffee','HAZELNUTSYRUP','https://a1coffee.net/products/hazelnut-flavouring-syrup-1-litre','Manual dropship','UK delivery'],
+  ['a1-simply-gingerbread','GINGERBREADSYRUP','simply-gingerbread-syrup-1l','Simply Gingerbread Syrup — 1L',1195,'','Iced','Gingerbread syrup for coffee, hot chocolate and seasonal drinks.','','bag',839,'A1 Coffee','GINGERBREADSYRUP','https://a1coffee.net/collections/syrups-flavours/products/gingerbread-syrup-1-litre','Manual dropship','UK delivery'],
+  ['a1-planet-java-matcha','MATCHAPLANET','planet-java-matcha-100g','Planet Java Matcha — 100g',1095,'','Matcha','Resealable 100g pouch of matcha green tea powder for hot or iced matcha drinks.','','bag',719,'A1 Coffee','MATCHAPLANET','https://a1coffee.net/collections/tea-tea-types-green-tea/products/planet-java-matcha-green-tea-powder-100g-bag','Manual dropship','UK delivery'],
+  ['a1-zuma-matcha','COSYMATCHA','zuma-matcha-100g','Zuma Matcha — 100g',1395,'','Matcha','100g resealable pouch of Zuma matcha powder for lattes and iced drinks.','','bag',899,'A1 Coffee','COSYMATCHA','https://a1coffee.net/collections/tea-tea-types-green-tea/products/cosy-matcha-tea-100g','Manual dropship','UK delivery'],
+  ['a1-perfect-ted-strawberry','MATCHATEDSTRAW','perfect-ted-strawberry-matcha-75g','Perfect Ted Strawberry Matcha — 75g',1695,'','Matcha','Strawberry-flavoured ceremonial-grade matcha blend in a 75g resealable pouch.','','bag',1199,'A1 Coffee','MATCHATEDSTRAW','https://a1coffee.net/collections/superfood-latte-mixes/products/perfect-ted-ceremonial-grade-strawberry-matcha-75g-bag','Manual dropship','UK delivery'],
+  ['a1-perfect-ted-vanilla','MATCHATEDVAN','perfect-ted-vanilla-matcha-75g','Perfect Ted Vanilla Matcha — 75g',1695,'','Matcha','Vanilla-flavoured ceremonial-grade matcha blend in a 75g resealable pouch.','','bag',1199,'A1 Coffee','MATCHATEDVAN','https://a1coffee.net/products/perfect-ted-ceremonial-grade-vanilla-matcha-75g-bag','Manual dropship','UK delivery'],
+  ['a1-perfect-ted-blueberry','A1-MATCHATEDBLUE','perfect-ted-blueberry-matcha-75g','Perfect Ted Blueberry Matcha — 75g',1695,'','Matcha','Blueberry-flavoured matcha blend in a 75g resealable pouch.','','bag',1199,'A1 Coffee','','https://a1coffee.net/collections/matcha','Manual dropship','UK delivery'],
+  ['a1-java-all-day','A1-JAVAALLDAY','java-caffe-all-day-coffee','Java Caffe All Day Coffee',795,'','Coffee','Everyday roasted coffee from the Java Caffe range. Choose grind and pack size before publication.','','bag',399,'A1 Coffee','','https://a1coffee.net/collections/java-caffe','Manual dropship','UK delivery'],
+  ['a1-java-brazil','JAVACAFFE14','java-caffe-brazilian-smooth-roast','Java Caffe Brazilian Smooth Roast',895,'','Coffee','Brazilian single-origin coffee with chocolate and red berry tasting notes.','','bag',439,'A1 Coffee','JAVACAFFE14','https://a1coffee.net/collections/hand-roasted-coffee-beans/products/java-caffe-brazilian-smooth-roast-coffee-beans-1kg','Manual dropship','UK delivery'],
+  ['a1-java-latte-blend','A1-JAVALATTE','java-caffe-latte-blend','Java Caffe Latte Blend',895,'','Coffee','Roasted coffee blend selected as a base for milk drinks. Choose grind and pack size before publication.','','bag',479,'A1 Coffee','','https://a1coffee.net/collections/java-caffe','Manual dropship','UK delivery'],
+] as const;
+
 const schema = `
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
@@ -183,6 +211,18 @@ async function ensureSchema(db: D1Database) {
       (id,variant_id,slug,name,price_pence,tag,category,description,compatibility,visual,stock_status,stock_on_hand,sort_order)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
     await db.batch(seedProducts.map((p, i) => stmt.bind(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8] || null,p[9],p[10],p[10] === 'out' ? 0 : p[10] === 'low' ? 6 : 50,i)));
+  }
+
+  const launchMarker = await db.prepare("SELECT value FROM settings WHERE key='a1_launch_catalogue_v1'").first();
+  if (!launchMarker) {
+    const stmt = db.prepare(`INSERT OR IGNORE INTO products
+      (id,variant_id,slug,name,price_pence,tag,category,description,compatibility,visual,stock_status,stock_on_hand,supplier,supplier_sku,supplier_url,cost_pence,fulfilment_method,lead_time,enabled,sort_order)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    await db.batch(launchCatalogue.map((p, i) => stmt.bind(
+      p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8] || null,p[9],'out',0,
+      p[11],p[12] || null,p[13] || null,p[10],p[14],p[15],0,100+i
+    )));
+    await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('a1_launch_catalogue_v1','imported')").run();
   }
 }
 
