@@ -5,7 +5,7 @@ type Env = {
 };
 
 const ADMIN_PASSWORD_SHA256 = 'c65c1e5b717230deba8add4273766ab9d8fb5ed14788a7181bed7defac103704';
-const SESSION_HOURS = 24;
+const SESSION_HOURS = 8;
 const CART_COOKIE = 'sd_cart';
 const ADMIN_COOKIE = 'sd_admin';
 
@@ -73,6 +73,15 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS admin_security (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  approved_email TEXT NOT NULL,
+  password_salt TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  totp_secret TEXT NOT NULL,
+  configured_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 INSERT OR IGNORE INTO settings(key,value) VALUES ('standard_delivery_pence','399');
 INSERT OR IGNORE INTO settings(key,value) VALUES ('free_delivery_threshold_pence','3000');
 `;
@@ -100,6 +109,65 @@ function secureCookie(name: string, value: string, maxAge: number) {
 async function sha256(value: string) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function bytesToHex(bytes: Uint8Array) {
+  return [...bytes].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function randomHex(bytes = 16) {
+  const data = new Uint8Array(bytes);
+  crypto.getRandomValues(data);
+  return bytesToHex(data);
+}
+
+async function passwordHash(password: string, saltHex: string) {
+  const salt = new Uint8Array((saltHex.match(/.{1,2}/g) || []).map(x => parseInt(x, 16)));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', salt, iterations:210000, hash:'SHA-256' }, key, 256);
+  return bytesToHex(new Uint8Array(bits));
+}
+
+const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+function randomBase32(length = 32) {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let out = '';
+  for (let i=0;i<length;i++) out += BASE32[bytes[i] & 31];
+  return out;
+}
+
+function base32Decode(input: string) {
+  const clean = input.toUpperCase().replace(/[^A-Z2-7]/g,'');
+  let bits = '';
+  for (const ch of clean) bits += BASE32.indexOf(ch).toString(2).padStart(5,'0');
+  const out: number[] = [];
+  for (let i=0;i+8<=bits.length;i+=8) out.push(parseInt(bits.slice(i,i+8),2));
+  return new Uint8Array(out);
+}
+
+async function totpCode(secret: string, counter: number) {
+  const key = await crypto.subtle.importKey('raw', base32Decode(secret), { name:'HMAC', hash:'SHA-1' }, false, ['sign']);
+  const msg = new ArrayBuffer(8);
+  const view = new DataView(msg);
+  view.setUint32(0, Math.floor(counter / 0x100000000));
+  view.setUint32(4, counter >>> 0);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, msg));
+  const offset = sig[sig.length - 1] & 15;
+  const bin = ((sig[offset] & 0x7f) << 24) | ((sig[offset+1] & 0xff) << 16) | ((sig[offset+2] & 0xff) << 8) | (sig[offset+3] & 0xff);
+  return String(bin % 1000000).padStart(6,'0');
+}
+
+async function verifyTotp(secret: string, code: string) {
+  if (!/^\d{6}$/.test(code)) return false;
+  const counter = Math.floor(Date.now()/30000);
+  for (const delta of [-1,0,1]) if (await totpCode(secret, counter+delta) === code) return true;
+  return false;
+}
+
+async function getSecurity(db: D1Database) {
+  return await db.prepare('SELECT approved_email,password_salt,password_hash,totp_secret FROM admin_security WHERE id=1').first();
 }
 
 async function ensureSchema(db: D1Database) {
@@ -261,29 +329,81 @@ async function handleApi(request: Request, env: Env) {
     if (attempt && now - Date.parse(attempt.window_started_at) < 15*60*1000 && attempt.count >= 5) {
       return json({ error:'Too many login attempts. Try again later.' }, { status:429 });
     }
+
     const body = await request.json() as any;
-    const hash = await sha256(String(body.password || ''));
-    if (hash !== ADMIN_PASSWORD_SHA256) {
-      const windowStart = attempt && now - Date.parse(attempt.window_started_at) < 15*60*1000 ? attempt.window_started_at : new Date().toISOString();
-      const count = attempt && windowStart === attempt.window_started_at ? Number(attempt.count)+1 : 1;
+    const security = await getSecurity(env.DB);
+    let valid = false;
+
+    if (security) {
+      const email = String(body.email || '').trim().toLowerCase();
+      const password = String(body.password || '');
+      const code = String(body.code || '').replace(/\s+/g,'');
+      const hash = await passwordHash(password, security.password_salt);
+      valid = email === String(security.approved_email).toLowerCase()
+        && hash === security.password_hash
+        && await verifyTotp(security.totp_secret, code);
+    } else {
+      const hash = await sha256(String(body.password || ''));
+      valid = hash === ADMIN_PASSWORD_SHA256;
+    }
+
+    if (!valid) {
+      const sameWindow = attempt && now - Date.parse(attempt.window_started_at) < 15*60*1000;
+      const windowStart = sameWindow ? attempt.window_started_at : new Date().toISOString();
+      const count = sameWindow ? Number(attempt.count)+1 : 1;
       await env.DB.prepare(`INSERT INTO login_attempts(key,count,window_started_at) VALUES (?,?,?)
         ON CONFLICT(key) DO UPDATE SET count=excluded.count, window_started_at=excluded.window_started_at`).bind(key,count,windowStart).run();
-      return json({ error:'Invalid login' }, { status:401 });
+      return json({ error:'Invalid email, password or authenticator code' }, { status:401 });
     }
+
     await env.DB.prepare('DELETE FROM login_attempts WHERE key=?').bind(key).run();
     const token = crypto.randomUUID() + crypto.randomUUID();
     const csrf = crypto.randomUUID();
     const expires = new Date(Date.now()+SESSION_HOURS*60*60*1000).toISOString();
     await env.DB.prepare('INSERT INTO admin_sessions(token,csrf_token,expires_at) VALUES (?,?,?)').bind(token,csrf,expires).run();
-    const response = json({ ok:true, csrfToken:csrf });
+    const response = json({ ok:true, csrfToken:csrf, setupRequired:!security });
     response.headers.append('set-cookie', secureCookie(ADMIN_COOKIE, token, SESSION_HOURS*60*60));
     return response;
+  }
+
+  if (path === '/api/admin/security/bootstrap' && method === 'GET') {
+    const auth = await requireAdmin(request, env);
+    if (auth.error) return auth.error;
+    const security = await getSecurity(env.DB);
+    if (security) return json({ configured:true });
+    const secret = randomBase32(32);
+    return json({ configured:false, secret });
+  }
+
+  if (path === '/api/admin/security/setup' && method === 'POST') {
+    const auth = await requireAdmin(request, env, true);
+    if (auth.error) return auth.error;
+    if (await getSecurity(env.DB)) return json({ error:'Security is already configured' }, { status:409 });
+
+    const body = await request.json() as any;
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const secret = String(body.secret || '').replace(/\s+/g,'').toUpperCase();
+    const code = String(body.code || '').replace(/\s+/g,'');
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error:'Enter a valid approved email address' }, { status:400 });
+    if (password.length < 14) return json({ error:'Use a password of at least 14 characters' }, { status:400 });
+    if (!/^[A-Z2-7]{24,64}$/.test(secret)) return json({ error:'Invalid authenticator secret' }, { status:400 });
+    if (!(await verifyTotp(secret, code))) return json({ error:'Authenticator code is not valid' }, { status:400 });
+
+    const salt = randomHex(16);
+    const hash = await passwordHash(password, salt);
+    await env.DB.prepare(`INSERT INTO admin_security(id,approved_email,password_salt,password_hash,totp_secret)
+      VALUES (1,?,?,?,?)`).bind(email,salt,hash,secret).run();
+    await env.DB.prepare('DELETE FROM admin_sessions WHERE token<>?').bind(auth.session.token).run();
+    return json({ ok:true, approvedEmail:email });
   }
 
   if (path === '/api/admin/session' && method === 'GET') {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
-    return json({ authenticated:true, csrfToken:auth.session.csrf_token });
+    const security = await getSecurity(env.DB);
+    return json({ authenticated:true, csrfToken:auth.session.csrf_token, setupRequired:!security, approvedEmail:security?.approved_email || null });
   }
 
   if (path === '/api/admin/logout' && method === 'POST') {
