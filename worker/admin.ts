@@ -34,10 +34,9 @@ async function setupView(msg=''){
   try{
     const d=await api('/api/admin/security/bootstrap');
     if(d.configured){securityConfigured=true;return showLogin()}
-    const secret=d.secret;
-    app.innerHTML='<div class="login"><form class="login-card" id="setupForm"><div class="sub">STANDARD DOSE</div><h1>Admin</h1><label>Email</label><input id="setupEmail" type="email" autocomplete="email" required autofocus/><label>Password</label><input id="setupPassword" type="password" autocomplete="new-password" minlength="14" required/><div class="secret">'+esc(secret)+'</div><label>Authentication code</label><input id="setupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required/><button>Continue</button>'+(msg?'<div class="error">'+esc(msg)+'</div>':'')+'</form></div>';
+    app.innerHTML='<div class="login"><form class="login-card" id="setupForm"><div class="sub">STANDARD DOSE</div><h1>Admin</h1><label>Email</label><input id="setupEmail" type="email" autocomplete="email" required autofocus/><label>Password</label><input id="setupPassword" type="password" autocomplete="new-password" minlength="14" required/><label>Authentication code</label><input id="setupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required/><button>Continue</button>'+(msg?'<div class="error">'+esc(msg)+'</div>':'')+'</form></div>';
     document.getElementById('setupForm').onsubmit=async e=>{e.preventDefault();try{
-      await api('/api/admin/security/setup',{method:'POST',body:JSON.stringify({email:document.getElementById('setupEmail').value,password:document.getElementById('setupPassword').value,secret,code:document.getElementById('setupCode').value})});
+      await api('/api/admin/security/setup',{method:'POST',body:JSON.stringify({email:document.getElementById('setupEmail').value,password:document.getElementById('setupPassword').value,code:document.getElementById('setupCode').value})});
       securityConfigured=true;await load();
     }catch(err){setupView(err.message)}}
   }catch(err){showLogin(err.message)}
