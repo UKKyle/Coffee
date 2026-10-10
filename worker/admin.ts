@@ -145,20 +145,19 @@ async function setupView(msg=''){
     setupForm.onsubmit=async e=>{e.preventDefault();try{const created=await api('/api/admin/security/setup',{method:'POST',body:JSON.stringify({email:setupEmail.value,password:setupPassword.value,code:setupCode.value})});csrf=created.csrfToken;securityConfigured=true;await load()}catch(err){setupView(err.message)}}
   }catch(err){showLogin(err.message)}
 }
-async function check(){try{const d=await api('/api/admin/session');csrf=d.csrfToken;if(d.setupRequired)await setupView();else{const path=location.pathname;if(path==='/admin/products/new'){view='create'}else{const m=path.match(/^\/admin\/products\/([^/]+)$/);if(m){view='detail';editingId=decodeURIComponent(m[1])}else if(path.startsWith('/admin/products')){view='products';if(new URL(location.href).searchParams.get('view')==='inventory')sortMode='stock'}else if(path==='/admin'||path==='/admin/'){view='home'}}await load()}}catch{showLogin()}}
+async function check(){try{const d=await api('/api/admin/session');csrf=d.csrfToken;if(d.setupRequired)await setupView();else{const path=location.pathname;if(path==='/admin/products/new'){view='create'}else{const m=path.match(/^\/admin\/products\/([^/]+)$/);if(m){view='detail';editingId=decodeURIComponent(m[1])}else if(path.startsWith('/admin/products')){view='products'}else if(path==='/admin'||path==='/admin/'){view='home'}}await load()}}catch{showLogin()}}
 async function load(){
   const results=await Promise.all([api('/api/admin/dashboard'),api('/api/admin/products')]);
   dashboard=results[0];products=results[1].products;selected=new Set([...selected].filter(id=>products.some(p=>p.id===id)));render()
 }
 function shell(content,crumb='Products'){
   const productsOpen=view==='products'||view==='detail'||view==='create';
-  return '<div class="app-shell"><aside class="sidebar"><div class="brand"><div class="brand-mark">SD</div><div class="brand-name">STANDARD DOSE</div></div><div class="nav"><button class="nav-button '+(view==='home'?'active':'')+'" id="navHome">'+icons.home+'<span>Home</span></button><div class="nav-group"><button class="nav-button '+(productsOpen?'active':'')+'" id="navProducts">'+icons.box+'<span>Products</span></button>'+(productsOpen?'<div class="nav-sub"><button class="'+(view==='products'&&sortMode!=='stock'?'active':'')+'" id="navAllProducts">All products</button><button class="'+(view==='products'&&sortMode==='stock'?'active':'')+'" id="navInventory">Inventory</button></div>':'')+'</div></div><div class="sidebar-footer"><button class="store-link" id="viewStore">'+icons.chevron+'<span>View storefront</span></button><button class="signout" id="logout">Sign out</button></div></aside><section class="workspace"><header class="topbar"><div class="breadcrumbs"><span>Admin</span><span>/</span><strong>'+esc(crumb)+'</strong></div><div class="top-actions"><button class="icon-button" id="commandButton" title="Quick search">'+icons.search+'</button><div class="user-chip"><div class="user-dot">SD</div><span>Admin</span></div></div></header>'+content+'</section></div>'
+  return '<div class="app-shell"><aside class="sidebar"><div class="brand"><div class="brand-mark">SD</div><div class="brand-name">STANDARD DOSE</div></div><div class="nav"><button class="nav-button '+(view==='home'?'active':'')+'" id="navHome">'+icons.home+'<span>Home</span></button><div class="nav-group"><button class="nav-button '+(productsOpen?'active':'')+'" id="navProducts">'+icons.box+'<span>Products</span></button>'+(productsOpen?'<div class="nav-sub"><button class="'+(view==='products'?'active':'')+'" id="navAllProducts">All products</button></div>':'')+'</div></div><div class="sidebar-footer"><button class="store-link" id="viewStore">'+icons.chevron+'<span>View storefront</span></button><button class="signout" id="logout">Sign out</button></div></aside><section class="workspace"><header class="topbar"><div class="breadcrumbs"><span>Admin</span><span>/</span><strong>'+esc(crumb)+'</strong></div><div class="top-actions"><button class="icon-button" id="commandButton" title="Quick search">'+icons.search+'</button><div class="user-chip"><div class="user-dot">SD</div><span>Admin</span></div></div></header>'+content+'</section></div>'
 }
 function wireShell(){
   document.getElementById('navHome').onclick=()=>{view='home';editingId=null;history.pushState({},'', '/admin');render()};
   document.getElementById('navProducts').onclick=()=>{view='products';editingId=null;dirty=false;sortMode='manual';history.pushState({},'', '/admin/products');render()};
   const all=document.getElementById('navAllProducts');if(all)all.onclick=()=>{view='products';sortMode='manual';history.pushState({},'', '/admin/products');render()};
-  const inv=document.getElementById('navInventory');if(inv)inv.onclick=()=>{view='products';sortMode='stock';history.pushState({},'', '/admin/products?view=inventory');render()};
   document.getElementById('viewStore').onclick=()=>window.open('https://standarddose.co.uk','_blank','noopener');
   document.getElementById('logout').onclick=logout;
   document.getElementById('commandButton').onclick=openCommand
@@ -198,8 +197,10 @@ function renderProducts(){
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{statusFilter=b.dataset.status;page=1;selected.clear();render()});
   if(!selected.size){
     productSearch.oninput=e=>{searchQuery=e.target.value;page=1;render();const s=document.getElementById('productSearch');if(s){s.focus();s.setSelectionRange(searchQuery.length,searchQuery.length)}};
-    categoryFilter.onchange=e=>{categoryFilter=e.target.value;page=1;render()};
-    sortMode.onchange=e=>{sortMode=e.target.value;page=1;render()}
+    const categorySelect=document.getElementById('categoryFilter');
+    const sortSelect=document.getElementById('sortMode');
+    categorySelect.onchange=e=>{categoryFilter=e.target.value;page=1;render()};
+    sortSelect.onchange=e=>{sortMode=e.target.value;page=1;render()}
   }else{
     bulkClear.onclick=()=>{selected.clear();render()};bulkArchive.onclick=()=>bulkAction('archive');bulkPublish.onclick=()=>bulkAction('publish')
   }
