@@ -116,6 +116,18 @@ function App() {
     return ids.map(id => products.find(product => product.id === id)).filter(Boolean) as Product[];
   }, [products]);
 
+  const ritualProducts = useMemo(() => ({
+    Espresso: products.find(product => product.id === 'a1-milk-jug-600') || products.find(product => product.category === 'Espresso'),
+    Iced: products.find(product => product.id === 'a1-simply-salted-caramel') || products.find(product => product.category === 'Iced'),
+    Matcha: products.find(product => product.id === 'a1-perfect-ted-strawberry') || products.find(product => product.category === 'Matcha'),
+    Coffee: products.find(product => product.id === 'a1-java-brazil') || products.find(product => product.category === 'Coffee'),
+  }), [products]);
+
+  const editorialProducts = useMemo(() => {
+    const ids = ['a1-tamper-48-57','a1-shot-glass-60','a1-milk-jug-600'];
+    return ids.map(id => products.find(product => product.id === id)).filter(Boolean) as Product[];
+  }, [products]);
+
   const addStarterSetup = async () => {
     for (const product of starterSetup) await addToCart(product);
   };
@@ -155,12 +167,18 @@ function App() {
       <section id="rituals" className="section rituals">
         <div className="section-head"><p className="eyebrow">SHOP BY RITUAL</p><h2>Start where you drink.</h2></div>
         <div className="ritual-grid">
-          {categories.map(([title, copy], index) => (
-            <button className="ritual-card" onClick={() => scrollToShop(title)} key={title}>
-              <span className="ritual-index">0{index + 1}</span><span className="arrow">↗</span>
-              <span className="ritual-copy"><strong>{title}</strong><small>{copy}</small></span>
-            </button>
-          ))}
+          {categories.map(([title, copy]) => {
+            const featured = ritualProducts[title as keyof typeof ritualProducts];
+            return (
+              <button className="ritual-card" onClick={() => scrollToShop(title)} key={title}>
+                <span className="ritual-media" aria-hidden="true">
+                  {featured?.image ? <img src={featured.image} alt="" loading="lazy" /> : featured ? <ProductVisual product={featured}/> : null}
+                </span>
+                <span className="arrow">↗</span>
+                <span className="ritual-copy"><strong>{title}</strong><small>{copy}</small></span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -192,7 +210,13 @@ function App() {
       </section>
 
       <section className="section editorial">
-        <div className="steel-panel"><div className="steel-disc"></div><div className="steel-line"></div></div>
+        <div className="editorial-media" aria-label="Selected espresso tools">
+          {editorialProducts.map((product,index) => (
+            <button className={`editorial-product editorial-product-${index}`} key={product.id} onClick={() => setActiveProduct(product)} aria-label={`View ${product.name}`}>
+              <ProductVisual product={product}/>
+            </button>
+          ))}
+        </div>
         <div><h2>Simple tools for better coffee at home.</h2><p>Useful gear, sensible prices and things you’ll actually use.</p></div>
       </section>
 
