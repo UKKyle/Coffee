@@ -2,6 +2,7 @@ type D1Database = any;
 
 type Env = {
   DB: D1Database;
+  ADMIN_TOTP_SECRET?: string;
 };
 
 const ADMIN_PASSWORD_SHA256 = 'c65c1e5b717230deba8add4273766ab9d8fb5ed14788a7181bed7defac103704';
@@ -344,9 +345,11 @@ async function handleApi(request: Request, env: Env) {
       const password = String(body.password || '');
       const code = String(body.code || '').replace(/\s+/g,'');
       const hash = await passwordHash(password, security.password_salt);
-      valid = email === String(security.approved_email).toLowerCase()
+      const totpSecret = String(env.ADMIN_TOTP_SECRET || '');
+      valid = Boolean(totpSecret)
+        && email === String(security.approved_email).toLowerCase()
         && hash === security.password_hash
-        && await verifyTotp(security.totp_secret, code);
+        && await verifyTotp(totpSecret, code);
     } else {
       const hash = await sha256(String(body.password || ''));
       valid = hash === ADMIN_PASSWORD_SHA256;
@@ -375,9 +378,7 @@ async function handleApi(request: Request, env: Env) {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
     const security = await getSecurity(env.DB);
-    if (security) return json({ configured:true });
-    const secret = randomBase32(32);
-    return json({ configured:false, secret });
+    return json({ configured:Boolean(security), totpReady:Boolean(env.ADMIN_TOTP_SECRET) });
   }
 
   if (path === '/api/admin/security/setup' && method === 'POST') {
@@ -388,18 +389,18 @@ async function handleApi(request: Request, env: Env) {
     const body = await request.json() as any;
     const email = String(body.email || '').trim().toLowerCase();
     const password = String(body.password || '');
-    const secret = String(body.secret || '').replace(/\s+/g,'').toUpperCase();
     const code = String(body.code || '').replace(/\s+/g,'');
+    const secret = String(env.ADMIN_TOTP_SECRET || '');
 
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error:'Enter a valid approved email address' }, { status:400 });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error:'Enter a valid email address' }, { status:400 });
     if (password.length < 14) return json({ error:'Use a password of at least 14 characters' }, { status:400 });
-    if (!/^[A-Z2-7]{24,64}$/.test(secret)) return json({ error:'Invalid authenticator secret' }, { status:400 });
-    if (!(await verifyTotp(secret, code))) return json({ error:'Authenticator code is not valid' }, { status:400 });
+    if (!secret) return json({ error:'Authentication is not configured' }, { status:503 });
+    if (!(await verifyTotp(secret, code))) return json({ error:'Authentication code is not valid' }, { status:400 });
 
     const salt = randomHex(16);
     const hash = await passwordHash(password, salt);
     await env.DB.prepare(`INSERT INTO admin_security(id,approved_email,password_salt,password_hash,totp_secret)
-      VALUES (1,?,?,?,?)`).bind(email,salt,hash,secret).run();
+      VALUES (1,?,?,?,?)`).bind(email,salt,hash,'managed-secret').run();
     await env.DB.prepare('DELETE FROM admin_sessions WHERE token<>?').bind(auth.session.token).run();
     return json({ ok:true, approvedEmail:email });
   }
