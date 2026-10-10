@@ -35,15 +35,12 @@ const esc=v=>String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'
 async function api(path,opts={}){const r=await fetch(path,{credentials:'include',...opts,headers:{'content-type':'application/json',...(csrf?{'x-csrf-token':csrf}:{}),...(opts.headers||{})}});const data=await r.json();if(!r.ok)throw new Error(data.error||'Request failed');return data}
 async function showLogin(msg=''){
   try{securityConfigured=(await api('/api/admin/security/status')).configured}catch{}
-  const fields=securityConfigured
-    ? '<label>Email</label><input id="email" type="email" autocomplete="username" required autofocus/><label>Password</label><input id="password" type="password" autocomplete="current-password" required/><label>Authentication code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required/>'
-    : '<label>Password</label><input id="password" type="password" autocomplete="current-password" required autofocus/>';
+  if(!securityConfigured)return setupView(msg);
+  const fields='<label>Email</label><input id="email" type="email" autocomplete="username" required autofocus/><label>Password</label><input id="password" type="password" autocomplete="current-password" required/><label>Authentication code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required/>';
   app.innerHTML='<div class="login"><form class="login-card" id="loginForm"><div class="sub">STANDARD DOSE</div><h1>Admin</h1>'+fields+'<button>Sign in</button>'+(msg?'<div class="error">'+esc(msg)+'</div>':'')+'</form></div>';
   document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();try{
-    const body={password:document.getElementById('password').value};
-    if(securityConfigured){body.email=document.getElementById('email').value;body.code=document.getElementById('code').value}
-    const d=await api('/api/admin/login',{method:'POST',body:JSON.stringify(body)});csrf=d.csrfToken;
-    if(d.setupRequired)await setupView();else await load();
+    const body={email:document.getElementById('email').value,password:document.getElementById('password').value,code:document.getElementById('code').value};
+    const d=await api('/api/admin/login',{method:'POST',body:JSON.stringify(body)});csrf=d.csrfToken;await load();
   }catch(err){showLogin(err.message)}}
 }
 async function setupView(msg=''){
@@ -52,8 +49,8 @@ async function setupView(msg=''){
     if(d.configured){securityConfigured=true;return showLogin()}
     app.innerHTML='<div class="login"><form class="login-card" id="setupForm"><div class="sub">STANDARD DOSE</div><h1>Admin</h1><label>Email</label><input id="setupEmail" type="email" autocomplete="email" required autofocus/><label>Password</label><input id="setupPassword" type="password" autocomplete="new-password" minlength="14" required/><label>Authentication code</label><input id="setupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required/><button>Continue</button>'+(msg?'<div class="error">'+esc(msg)+'</div>':'')+'</form></div>';
     document.getElementById('setupForm').onsubmit=async e=>{e.preventDefault();try{
-      await api('/api/admin/security/setup',{method:'POST',body:JSON.stringify({email:document.getElementById('setupEmail').value,password:document.getElementById('setupPassword').value,code:document.getElementById('setupCode').value})});
-      securityConfigured=true;await load();
+      const created=await api('/api/admin/security/setup',{method:'POST',body:JSON.stringify({email:document.getElementById('setupEmail').value,password:document.getElementById('setupPassword').value,code:document.getElementById('setupCode').value})});
+      csrf=created.csrfToken;securityConfigured=true;await load();
     }catch(err){setupView(err.message)}}
   }catch(err){showLogin(err.message)}
 }
