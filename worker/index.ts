@@ -322,6 +322,11 @@ async function handleApi(request: Request, env: Env) {
     return response;
   }
 
+  if (path === '/api/admin/security/status' && method === 'GET') {
+    const security = await getSecurity(env.DB);
+    return json({ configured:Boolean(security) });
+  }
+
   if (path === '/api/admin/login' && method === 'POST') {
     const key = await loginRateKey(request);
     const attempt = await env.DB.prepare('SELECT count, window_started_at FROM login_attempts WHERE key=?').bind(key).first();
