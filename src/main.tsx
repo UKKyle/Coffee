@@ -147,9 +147,17 @@ function App() {
 
   return (
     <main>
-      <div className="utility-bar">
-        <span>FREE UK DELIVERY OVER £30</span>
-        <span className="utility-detail">Standard UK delivery £3.99</span>
+      <div className="utility-bar" aria-label="Store information">
+        <div className="utility-track">
+          {[0,1].map(group => (
+            <div className="utility-group" aria-hidden={group === 1} key={group}>
+              <span>FREE UK DELIVERY OVER £30</span><i>•</i>
+              <span>STANDARD UK DELIVERY £3.99</span><i>•</i>
+              <span>ESPRESSO · COFFEE · MATCHA · ICED</span><i>•</i>
+              <span>STANDARD DOSE COFFEE</span><i>•</i>
+            </div>
+          ))}
+        </div>
       </div>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Standard Dose home"><strong>STANDARD DOSE</strong><small>COFFEE</small></a>
