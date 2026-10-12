@@ -181,7 +181,6 @@ function App() {
           <p className="hero-sub">Shop practical coffee gear, brewing tools and everyday essentials chosen for home baristas.</p>
           <div className="hero-actions">
             <button className="cta" onClick={() => scrollToShop('All')}>Shop all coffee gear</button>
-            <button className="hero-secondary" onClick={() => scrollToShop('Espresso')}>Shop espresso →</button>
           </div>
           <div className="hero-proof" aria-label="Store benefits">
             <span>Free UK delivery over £30</span>
