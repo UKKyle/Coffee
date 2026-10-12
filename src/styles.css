@@ -348,3 +348,176 @@
   .hero-trust-bar i{width:14px;height:14px;font-size:8px}
   .department-section{padding-top:64px}
 }
+
+
+/* Premium category merchandising */
+.department-section{
+  padding-top:88px;
+  padding-bottom:96px;
+  background:#f4f1ea;
+}
+.category-head{
+  align-items:flex-end;
+  margin-bottom:38px;
+}
+.category-head>div{max-width:820px}
+.category-head h2{
+  max-width:760px;
+  font-size:clamp(50px,5.3vw,76px);
+  line-height:.94;
+  margin-bottom:16px;
+}
+.category-intro{
+  max-width:620px;
+  margin:0;
+  color:#706c65;
+  font-size:14px;
+  line-height:1.55;
+}
+.category-head>button{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding-bottom:6px;
+  font-size:12px;
+  font-weight:700;
+}
+.category-head>button span{transition:transform .2s ease}
+.category-head>button:hover span{transform:translateX(3px)}
+.department-grid{
+  grid-template-columns:repeat(4,1fr);
+  border:1px solid #c8c3b8;
+  background:#c8c3b8;
+  gap:1px;
+}
+.department-card{
+  min-height:250px;
+  padding:26px 24px 22px;
+  border:0;
+  background:#f8f6f1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+  isolation:isolate;
+  transition:background .25s ease,color .25s ease;
+}
+.department-card:before{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:3px;
+  background:#d7ff46;
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .25s ease;
+  z-index:2;
+}
+.department-card:after{
+  content:attr(data-category);
+  position:absolute;
+  right:-8px;
+  bottom:34px;
+  z-index:-1;
+  color:rgba(13,13,13,.035);
+  font-size:clamp(54px,5vw,84px);
+  line-height:.8;
+  font-weight:800;
+  letter-spacing:-.065em;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.department-card-copy{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  position:relative;
+  z-index:1;
+}
+.department-card strong{
+  font-size:30px;
+  line-height:1;
+  letter-spacing:-.045em;
+}
+.department-card small{
+  max-width:210px;
+  font-size:13px;
+  line-height:1.45;
+  color:#77726a;
+}
+.department-card-footer{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:end;
+  gap:12px;
+  padding-top:18px;
+  border-top:1px solid #d8d3ca;
+}
+.department-card-footer b{
+  font-size:10px;
+  font-weight:700;
+  color:#8a857d;
+  letter-spacing:.04em;
+}
+.department-card-footer em{
+  justify-self:end;
+  font-size:10px;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  opacity:0;
+  transform:translateY(3px);
+  transition:opacity .2s ease,transform .2s ease;
+}
+.department-card-footer i{
+  position:static;
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  border:1px solid #bcb7ae;
+  border-radius:50%;
+  font-size:15px;
+  transition:background .2s ease,border-color .2s ease,transform .2s ease;
+}
+.department-card:hover{
+  background:#111;
+  color:#f4f1ea;
+}
+.department-card:hover:before{transform:scaleX(1)}
+.department-card:hover:after{color:rgba(255,255,255,.035)}
+.department-card:hover small,.department-card:hover .department-card-footer b{color:#aaa69e}
+.department-card:hover .department-card-footer{border-color:#353535}
+.department-card:hover .department-card-footer em{opacity:1;transform:none}
+.department-card:hover .department-card-footer i{
+  background:#d7ff46;
+  border-color:#d7ff46;
+  color:#111;
+  transform:translateX(2px);
+}
+@media(max-width:1050px){
+  .department-grid{grid-template-columns:repeat(2,1fr)}
+  .department-card{min-height:220px}
+}
+@media(max-width:760px){
+  .department-section{padding-top:68px;padding-bottom:72px}
+  .category-head{margin-bottom:28px}
+  .category-head h2{font-size:clamp(44px,11vw,60px)}
+  .category-intro{font-size:13px;max-width:520px}
+  .department-grid{grid-template-columns:1fr 1fr}
+  .department-card{min-height:190px;padding:20px}
+  .department-card strong{font-size:26px}
+  .department-card-footer em{display:none}
+}
+@media(max-width:560px){
+  .department-section{padding-top:56px;padding-bottom:60px}
+  .department-grid{grid-template-columns:1fr}
+  .department-card{min-height:158px}
+  .department-card:after{font-size:60px;bottom:24px}
+  .department-card-footer{margin-top:24px}
+}
