@@ -768,3 +768,118 @@
   .department-card-copy{padding:20px 20px 8px}
   .department-card-cta{margin:12px 20px 18px}
 }
+
+
+/* Brand discovery — premium bridge into catalogue */
+.brand-strip{
+  background:#101010;
+  color:#f4f1ea;
+  border:0;
+  padding-top:66px;
+  padding-bottom:70px;
+}
+.brand-strip-head{
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  align-items:end;
+  gap:48px;
+  margin-bottom:34px;
+}
+.brand-strip-head>div{max-width:680px}
+.brand-strip-head .eyebrow{
+  margin:0 0 10px;
+  color:#d7ff46;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.16em;
+}
+.brand-strip-head h2{
+  margin:0;
+  font-size:clamp(38px,4vw,58px);
+  line-height:.96;
+  letter-spacing:-.045em;
+}
+.brand-strip-head>p{
+  justify-self:end;
+  max-width:430px;
+  margin:0 0 4px;
+  color:#8f8b84;
+  font-size:12px;
+  line-height:1.55;
+}
+.brand-list{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0;
+  border-top:1px solid #303030;
+  border-left:1px solid #303030;
+}
+.brand-list button{
+  position:relative;
+  min-height:118px;
+  padding:20px 48px 18px 18px;
+  border:0;
+  border-right:1px solid #303030;
+  border-bottom:1px solid #303030;
+  background:#101010;
+  color:#f4f1ea;
+  text-align:left;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-rows:auto 1fr;
+  column-gap:12px;
+  align-items:start;
+  transition:background .22s ease,color .22s ease;
+}
+.brand-list button:hover{
+  background:#d7ff46;
+  color:#0b0b0b;
+}
+.brand-index{
+  grid-row:1/3;
+  padding-top:3px;
+  color:#66625c;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+.brand-list button:hover .brand-index{color:#4c5600}
+.brand-list strong{
+  font-size:18px;
+  line-height:1.05;
+  letter-spacing:-.025em;
+}
+.brand-list small{
+  align-self:end;
+  margin-top:18px;
+  color:#77736d;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.brand-list button:hover small{color:#4c5600}
+.brand-list i{
+  position:absolute;
+  right:18px;
+  bottom:18px;
+  font-style:normal;
+  font-size:16px;
+  transition:transform .2s ease;
+}
+.brand-list button:hover i{transform:translateX(3px)}
+@media(max-width:1050px){
+  .brand-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .brand-strip{padding-top:52px;padding-bottom:56px}
+  .brand-strip-head{grid-template-columns:1fr;gap:16px;margin-bottom:26px}
+  .brand-strip-head>p{justify-self:start;max-width:520px}
+  .brand-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .brand-list button{min-height:104px}
+}
+@media(max-width:480px){
+  .brand-list{grid-template-columns:1fr}
+  .brand-list button{min-height:88px}
+}
