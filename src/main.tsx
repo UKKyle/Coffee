@@ -178,17 +178,15 @@ function App() {
         <div className="hero-copy">
           <h1>Make the ritual<br/>feel better.</h1>
           <p className="hero-sub">Coffee gear, brewing tools and everyday essentials for home baristas.</p>
-          <div className="hero-actions">
-            <button className="cta" onClick={() => scrollToShop('All')}>Shop coffee gear</button>
-            <button className="hero-secondary" onClick={() => document.querySelector('#rituals')?.scrollIntoView({behavior:'smooth'})}>Browse categories</button>
-          </div>
+          <button className="cta" onClick={() => scrollToShop('All')}>Shop coffee gear</button>
         </div>
         <div className="hero-media-shell">
-          <video className="hero-video" autoPlay muted playsInline loop preload="metadata" poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94" aria-label="Barista inserting and locking a portafilter into an espresso machine">
+          <video className="hero-video" autoPlay muted playsInline loop preload="auto" poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94" aria-label="Barista inserting and locking a portafilter into an espresso machine">
             <source src="https://www.pexels.com/download/video/7487673/" type="video/mp4" />
           </video>
           <div className="hero-photo-fallback" aria-hidden="true" />
         </div>
+        <div className="hero-vignette" />
       </section>
 
       <section id="rituals" className="section department-section">
