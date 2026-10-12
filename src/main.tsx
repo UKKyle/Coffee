@@ -130,10 +130,18 @@ function App() {
   }, [products, query, activeCategory, sortMode]);
 
   const brandNames = useMemo(() => Array.from(new Set(products.map(productBrand))).filter(Boolean), [products]);
+  const brandCounts = useMemo(() => Object.fromEntries(brandNames.map(brand => [brand, products.filter(product => productBrand(product) === brand).length])), [brandNames, products]);
   const categoryCounts = useMemo(() => Object.fromEntries(categories.map(([title]) => [title, products.filter(p => p.category === title).length])), [products]);
 
   const scrollToShop = (category:string) => {
     setActiveCategory(category);
+    setMenuOpen(false);
+    requestAnimationFrame(() => document.querySelector('#shop')?.scrollIntoView({behavior:'smooth'}));
+  };
+
+  const shopBrand = (brand:string) => {
+    setActiveCategory('All');
+    setQuery(brand);
     setMenuOpen(false);
     requestAnimationFrame(() => document.querySelector('#shop')?.scrollIntoView({behavior:'smooth'}));
   };
@@ -234,9 +242,24 @@ function App() {
         </div>
       </section>
 
-      <section className="brand-strip section">
-        <div className="brand-strip-head"><span>BRANDS IN THE SHOP</span><small>Current live catalogue</small></div>
-        <div className="brand-list">{brandNames.map(brand => <span key={brand}>{brand}</span>)}</div>
+      <section className="brand-strip section" aria-labelledby="brand-strip-title">
+        <div className="brand-strip-head">
+          <div>
+            <p className="eyebrow">BRANDS IN ROTATION</p>
+            <h2 id="brand-strip-title">Names worth knowing.</h2>
+          </div>
+          <p>Shop a focused mix of coffee, matcha and barista brands selected for useful products rather than endless choice.</p>
+        </div>
+        <div className="brand-list">
+          {brandNames.map((brand, index) => (
+            <button key={brand} onClick={() => shopBrand(brand)}>
+              <span className="brand-index">{String(index + 1).padStart(2,'0')}</span>
+              <strong>{brand}</strong>
+              <small>{brandCounts[brand] || 0} {(brandCounts[brand] || 0) === 1 ? 'product' : 'products'}</small>
+              <i>→</i>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section id="shop" className="section shop-section">
