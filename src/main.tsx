@@ -124,6 +124,9 @@ function App() {
 
   const brandNames = useMemo(() => Array.from(new Set(products.map(productBrand))).filter(Boolean), [products]);
   const categoryCounts = useMemo(() => Object.fromEntries(categories.map(([title]) => [title, products.filter(p => p.category === title).length])), [products]);
+  const categoryFeatured = useMemo(() => Object.fromEntries(
+    categories.map(([title]) => [title, products.find(p => p.category === title && p.image) || products.find(p => p.category === title)])
+  ), [products]);
 
   const scrollToShop = (category:string) => {
     setActiveCategory(category);
@@ -208,19 +211,25 @@ function App() {
           <button onClick={() => scrollToShop('All')}>Shop all products <span>→</span></button>
         </div>
         <div className="department-grid">
-          {categories.map(([title, copy]) => (
-            <button className="department-card" data-category={title} onClick={() => scrollToShop(title)} key={title}>
-              <span className="department-card-copy">
-                <strong>{title}</strong>
-                <small>{copy}</small>
-              </span>
-              <span className="department-card-footer">
-                <b>{categoryCounts[title] || 0} products</b>
-                <em>Shop {title}</em>
-                <i>→</i>
-              </span>
-            </button>
-          ))}
+          {categories.map(([title, copy], index) => {
+            const featured = categoryFeatured[title] as Product | undefined;
+            return (
+              <button className={`department-card category-card-${index}`} data-category={title} onClick={() => scrollToShop(title)} key={title}>
+                <span className="department-media" aria-hidden="true">
+                  {featured?.image
+                    ? <img src={featured.image} alt="" />
+                    : <span className="department-media-fallback">{title}</span>}
+                  <span className="department-media-shade" />
+                  <span className="department-count">{categoryCounts[title] || 0} products</span>
+                </span>
+                <span className="department-card-copy">
+                  <small>{copy}</small>
+                  <strong>{title}</strong>
+                </span>
+                <span className="department-card-cta">Shop {title}<i>→</i></span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
