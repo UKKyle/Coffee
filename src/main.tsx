@@ -19,6 +19,13 @@ const categories = [
   ['Coffee', 'Beans & brew essentials.'],
 ];
 
+const categoryArt:Record<string,string> = {
+  Espresso: '/category/espresso.webp',
+  Iced: '/category/iced.webp',
+  Matcha: '/category/matcha.webp',
+  Coffee: '/category/coffee.webp',
+};
+
 const money = (value:number) => `£${value.toFixed(2)}`;
 
 const productBrand = (product:Product) => {
@@ -124,9 +131,6 @@ function App() {
 
   const brandNames = useMemo(() => Array.from(new Set(products.map(productBrand))).filter(Boolean), [products]);
   const categoryCounts = useMemo(() => Object.fromEntries(categories.map(([title]) => [title, products.filter(p => p.category === title).length])), [products]);
-  const categoryFeatured = useMemo(() => Object.fromEntries(
-    categories.map(([title]) => [title, products.find(p => p.category === title && p.image) || products.find(p => p.category === title)])
-  ), [products]);
 
   const scrollToShop = (category:string) => {
     setActiveCategory(category);
@@ -212,13 +216,10 @@ function App() {
         </div>
         <div className="department-grid">
           {categories.map(([title, copy], index) => {
-            const featured = categoryFeatured[title] as Product | undefined;
             return (
               <button className={`department-card category-card-${index}`} data-category={title} onClick={() => scrollToShop(title)} key={title}>
                 <span className="department-media" aria-hidden="true">
-                  {featured?.image
-                    ? <img src={featured.image} alt="" />
-                    : <span className="department-media-fallback">{title}</span>}
+                  <img src={categoryArt[title]} alt="" loading="lazy" />
                   <span className="department-media-shade" />
                   <span className="department-count">{categoryCounts[title] || 0} products</span>
                 </span>
