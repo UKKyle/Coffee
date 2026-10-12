@@ -176,9 +176,18 @@ function App() {
 
       <section id="top" className="hero">
         <div className="hero-copy">
-          <h1>Make the ritual<br/>feel better.</h1>
-          <p className="hero-sub">Coffee gear, brewing tools and everyday essentials for home baristas.</p>
-          <button className="cta" onClick={() => scrollToShop('All')}>Shop coffee gear</button>
+          <p className="hero-kicker">ESPRESSO · COFFEE · MATCHA · ICED</p>
+          <h1>Better coffee,<br/>made at home.</h1>
+          <p className="hero-sub">Shop practical coffee gear, brewing tools and everyday essentials chosen for home baristas.</p>
+          <div className="hero-actions">
+            <button className="cta" onClick={() => scrollToShop('All')}>Shop all coffee gear</button>
+            <button className="hero-secondary" onClick={() => scrollToShop('Espresso')}>Shop espresso →</button>
+          </div>
+          <div className="hero-proof" aria-label="Store benefits">
+            <span>Free UK delivery over £30</span>
+            <span>Curated home-barista range</span>
+            <span>Clear stock availability</span>
+          </div>
         </div>
         <div className="hero-media-shell">
           <video className="hero-video" autoPlay muted playsInline loop preload="auto" poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94" aria-label="Barista inserting and locking a portafilter into an espresso machine">
