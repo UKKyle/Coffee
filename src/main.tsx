@@ -176,7 +176,6 @@ function App() {
 
       <section id="top" className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">HOME COFFEE, DIALED IN.</p>
           <h1>Make the ritual<br/>feel better.</h1>
           <p className="hero-sub">Coffee gear, brewing tools and everyday essentials for home baristas.</p>
           <button className="cta" onClick={() => scrollToShop('All')}>Shop coffee gear</button>
