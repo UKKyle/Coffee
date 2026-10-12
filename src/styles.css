@@ -1157,3 +1157,22 @@
   .product-grid{grid-template-columns:1fr}
   .product-card .product-visual{height:280px}
 }
+
+
+/* Brand grid correction — restore four-column premium rhythm */
+@media(min-width:1051px){
+  .brand-list{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .brand-list button{
+    min-height:118px;
+    padding:20px 48px 18px 18px;
+  }
+  .brand-list strong{font-size:18px}
+  .brand-list small{margin-top:18px}
+}
+@media(min-width:761px) and (max-width:1050px){
+  .brand-list{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
