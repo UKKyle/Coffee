@@ -193,9 +193,9 @@ function App() {
       </section>
 
       <section className="hero-trust-bar" aria-label="Why shop Standard Dose">
-        <span><b>01</b> Curated for home baristas</span>
-        <span><b>02</b> Clear stock availability</span>
-        <span><b>03</b> UK delivery from £3.99</span>
+        <span><i>✓</i> Curated for home baristas</span>
+        <span><i>✓</i> Live stock availability</span>
+        <span><i>✓</i> UK delivery from £3.99</span>
       </section>
 
       <section id="rituals" className="section department-section">
