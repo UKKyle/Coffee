@@ -147,15 +147,22 @@ function App() {
 
   return (
     <main>
+      <div className="utility-bar">
+        <span>FREE UK DELIVERY OVER £30</span>
+        <span className="utility-detail">Standard UK delivery £3.99</span>
+      </div>
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Standard Dose home">STANDARD DOSE</a>
+        <a className="brand" href="#top" aria-label="Standard Dose home"><strong>STANDARD DOSE</strong><small>COFFEE</small></a>
         <nav aria-label="Primary navigation">
-          <button onClick={() => scrollToShop('All')}>Shop</button>
-          <a href="#rituals">Categories</a>
+          <button onClick={() => scrollToShop('All')}>Shop all</button>
+          <button onClick={() => scrollToShop('Espresso')}>Espresso</button>
+          <button onClick={() => scrollToShop('Coffee')}>Coffee</button>
+          <button onClick={() => scrollToShop('Matcha')}>Matcha</button>
+          <button onClick={() => scrollToShop('Iced')}>Iced</button>
           <a href="#drops">Just landed</a>
-          <button onClick={() => setSearchOpen(true)}>Search</button>
         </nav>
         <div className="header-actions">
+          <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search products"><span>Search</span><b>⌕</b></button>
           <button className="mobile-menu-button" onClick={() => setMenuOpen(true)}>Menu</button>
           <button className="cart" type="button" onClick={() => setCartOpen(true)} aria-label={`Basket with ${cartCount} items`}>BAG <span>{cartCount}</span></button>
         </div>
@@ -175,12 +182,6 @@ function App() {
           <div className="hero-photo-fallback" aria-hidden="true" />
         </div>
         <div className="hero-vignette" />
-      </section>
-
-      <section className="commerce-strip" aria-label="Shopping benefits">
-        <div><strong>FREE UK DELIVERY OVER £30</strong><span>Standard delivery £3.99</span></div>
-        <div><strong>HOME COFFEE SPECIALIST</strong><span>Espresso, filter, iced & matcha</span></div>
-        <div><strong>CURATED RANGE</strong><span>Useful gear, clear pricing</span></div>
       </section>
 
       <section id="rituals" className="section department-section">
