@@ -236,3 +236,50 @@
   .hero-proof span+span:before{display:none}
   .hero:after{height:22px}
 }
+
+
+/* Slim trust strip: bridges hero into retail content */
+.hero-trust-bar{
+  position:relative;
+  z-index:6;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  min-height:46px;
+  background:#f4f1ea;
+  color:#111;
+  border-top:1px solid #d8d3c9;
+  border-bottom:1px solid #d8d3c9;
+}
+.hero-trust-bar span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:46px;
+  padding:0 22px;
+  border-right:1px solid #d8d3c9;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.hero-trust-bar span:last-child{border-right:0}
+.hero-trust-bar b{
+  font-size:9px;
+  font-weight:800;
+  color:#8d8981;
+  letter-spacing:.06em;
+}
+@media(max-width:760px){
+  .hero-trust-bar{grid-template-columns:1fr;min-height:0}
+  .hero-trust-bar span{
+    justify-content:flex-start;
+    min-height:38px;
+    padding:0 18px;
+    border-right:0;
+    border-bottom:1px solid #d8d3c9;
+    font-size:9px;
+  }
+  .hero-trust-bar span:last-child{border-bottom:0}
+}
