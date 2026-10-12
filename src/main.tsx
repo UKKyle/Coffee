@@ -152,8 +152,8 @@ function App() {
           {[0,1].map(group => (
             <div className="utility-group" aria-hidden={group === 1} key={group}>
               <span>FREE UK DELIVERY OVER £30</span>
-              <span>FREE UK DELIVERY OVER £30</span>
-              <span>FREE UK DELIVERY OVER £30</span>
+              <span>STANDARD DELIVERY £3.99</span>
+              <span>ESPRESSO · COFFEE · MATCHA · ICED</span>
             </div>
           ))}
         </div>
