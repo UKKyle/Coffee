@@ -147,13 +147,13 @@ function App() {
 
   return (
     <main>
-      <div className="utility-bar" aria-label="Store information">
+      <div className="utility-bar" aria-label="Free UK delivery over £30">
         <div className="utility-track">
           {[0,1].map(group => (
             <div className="utility-group" aria-hidden={group === 1} key={group}>
-              <span>FREE UK DELIVERY OVER £30</span><i>•</i>
-              <span>FREE UK DELIVERY OVER £30</span><i>•</i>
-              <span>FREE UK DELIVERY OVER £30</span><i>•</i>
+              <span>FREE UK DELIVERY OVER £30</span>
+              <span>FREE UK DELIVERY OVER £30</span>
+              <span>FREE UK DELIVERY OVER £30</span>
             </div>
           ))}
         </div>
