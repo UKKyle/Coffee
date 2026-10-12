@@ -1190,6 +1190,6 @@
 /* Mobile hero: readable editorial gradient over moving footage; desktop untouched. */
 @media (max-width: 767px) {
   .hero .hero-vignette {
-    background: linear-gradient(180deg, rgba(0,0,0,.86) 0%, rgba(0,0,0,.82) 24%, rgba(0,0,0,.73) 43%, rgba(0,0,0,.30) 67%, rgba(0,0,0,.08) 100%);
+    background: linear-gradient(180deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.85) 24%, rgba(0,0,0,.77) 43%, rgba(0,0,0,.58) 59%, rgba(0,0,0,.20) 79%, rgba(0,0,0,.06) 100%);
   }
 }
