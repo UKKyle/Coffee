@@ -199,16 +199,26 @@ function App() {
       </section>
 
       <section id="rituals" className="section department-section">
-        <div className="retail-section-head">
-          <div><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find what you need.</h2></div>
-          <button onClick={() => scrollToShop('All')}>Shop all products →</button>
+        <div className="retail-section-head category-head">
+          <div>
+            <p className="eyebrow">SHOP BY CATEGORY</p>
+            <h2>Build your coffee setup.</h2>
+            <p className="category-intro">From espresso prep to iced coffee and matcha, shop the tools that fit how you make coffee at home.</p>
+          </div>
+          <button onClick={() => scrollToShop('All')}>Shop all products <span>→</span></button>
         </div>
         <div className="department-grid">
           {categories.map(([title, copy]) => (
-            <button className="department-card" onClick={() => scrollToShop(title)} key={title}>
-              <span><strong>{title}</strong><small>{copy}</small></span>
-              <b>{categoryCounts[title] || 0} products</b>
-              <i>→</i>
+            <button className="department-card" data-category={title} onClick={() => scrollToShop(title)} key={title}>
+              <span className="department-card-copy">
+                <strong>{title}</strong>
+                <small>{copy}</small>
+              </span>
+              <span className="department-card-footer">
+                <b>{categoryCounts[title] || 0} products</b>
+                <em>Shop {title}</em>
+                <i>→</i>
+              </span>
             </button>
           ))}
         </div>
