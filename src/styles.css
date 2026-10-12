@@ -182,3 +182,25 @@
   .hero-video,.hero-photo-fallback{object-position:74% 40%}
   .hero:after{height:46px}
 }
+
+
+/* Desktop hero collapse fix: keep the audited hero occupying its own viewport area */
+@media (min-width:901px){
+  .hero{
+    height:clamp(620px,78vh,760px);
+    min-height:620px;
+    padding-top:86px;
+    overflow:hidden;
+  }
+  .hero-media-shell{
+    position:absolute;
+    top:0;
+    right:0;
+    width:67vw;
+    height:100%;
+  }
+  .hero-copy{
+    position:absolute;
+    top:22vh;
+  }
+}
