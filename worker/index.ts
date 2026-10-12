@@ -37,6 +37,15 @@ const launchCatalogue = [
   ['a1-java-latte-blend','A1-JAVALATTE','java-caffe-latte-blend','Java Caffe Latte Blend',895,'','Coffee','Roasted coffee blend selected as a base for milk drinks. Choose grind and pack size before publication.','','bag',479,'A1 Coffee','','https://a1coffee.net/collections/java-caffe','Manual dropship','UK delivery'],
 ] as const;
 
+const brewedByHandCandidates = [
+  ['bbh-aeropress-original','801708-11C','aeropress-original-coffee-maker','AeroPress Original Coffee Maker',3999,'','Coffee','AeroPress Original brewer for smooth, fast coffee at home or on the go.','','cup','AeroPress','801708-11C','https://trade.brewedbyhand.com/products/aeropress-original-coffee-maker','Brewed By Hand dropship candidate','3–5 business days'],
+  ['bbh-hario-v60-server-set','VCDS-02-B-EU','hario-v60-dripper-server-set-size-02','Hario V60 Dripper & Server Set — Size 02',2800,'','Coffee','Complete V60 starter set with dripper, 600ml server, filter papers and measuring spoon.','','cup','Hario','VCDS-02-B-EU','https://trade.brewedbyhand.com/products/hario-v60-coffee-dripper-and-server-set-size-02','Brewed By Hand dropship candidate','3–5 business days'],
+  ['bbh-hario-v60-starter','VD-02-T-EU','hario-v60-dripper-set-transparent-size-02','Hario V60 Dripper Set — Transparent 02',1200,'','Coffee','Simple V60 starter set with transparent dripper, scoop and filter papers.','','cup','Hario','VD-02-T-EU','https://www.hario.co.uk/products/hario-v60-coffee-dripper-set-transparent-size-02','Brewed By Hand dropship candidate','3–5 business days'],
+  ['bbh-loveramics-potters-basil','C088-131BBI','loveramics-potters-flat-white-basil-150ml','Loveramics Potters Flat White Cup — Basil 150ml',1420,'','Coffee','Restaurant-grade porcelain flat white cup with a reactive hand-dipped glaze.','','cup','Loveramics','C088-131BBI','https://trade.brewedbyhand.com/products/loveramics-reactive-glaze-potters-flat-white-coffee-cup-basil-150ml','Brewed By Hand dropship candidate','3–5 business days'],
+  ['bbh-hario-japan-indigo','VDR-02-JAB-EX','hario-v60-japan-collection-indigo-blue-size-02','Hario V60 Japan Collection — Indigo Blue 02',1400,'','Coffee','Colour edition of the iconic V60 dripper celebrating Hario\'s Japanese heritage.','','cup','Hario','VDR-02-JAB-EX','https://trade.brewedbyhand.com/products/hario-v60-dripper-japan-collection-size-02-indigo-blue','Brewed By Hand dropship candidate','3–5 business days'],
+  ['bbh-hario-ceramic-indigo','VDC-02-IBU','hario-v60-ceramic-indigo-blue-size-02','Hario V60 Ceramic Dripper — Indigo Blue 02',3600,'','Coffee','Ceramic V60 dripper in Indigo Blue for a more tactile home brewing setup.','','cup','Hario','VDC-02-IBU','https://www.hario.co.uk/products/hario-v60-ceramic-coffee-dripper-indigo-blue-size-02','Brewed By Hand dropship candidate','3–5 business days'],
+] as const;
+
 const schema = `
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
@@ -242,6 +251,18 @@ async function ensureSchema(db: D1Database) {
     const stmt = db.prepare("UPDATE products SET image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND supplier='A1 Coffee'");
     await db.batch(launchCatalogue.map(p => stmt.bind('https://standarddose.co.uk/media/supplier/'+p[0], p[0])));
     await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('a1_supplier_images_v1','assigned')").run();
+  }
+
+  const bbhMarker = await db.prepare("SELECT value FROM settings WHERE key='bbh_candidate_catalogue_v1'").first();
+  if (!bbhMarker) {
+    const stmt = db.prepare(`INSERT OR IGNORE INTO products
+      (id,variant_id,slug,name,price_pence,tag,category,description,compatibility,visual,stock_status,stock_on_hand,supplier,supplier_sku,supplier_url,cost_pence,fulfilment_method,lead_time,enabled,sort_order)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    await db.batch(brewedByHandCandidates.map((p, i) => stmt.bind(
+      p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8] || null,p[9],'out',0,
+      'Brewed By Hand',p[11],p[12],null,p[13],p[14],0,200+i
+    )));
+    await db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('bbh_candidate_catalogue_v1','imported')").run();
   }
 }
 
