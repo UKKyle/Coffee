@@ -1185,3 +1185,11 @@
     bottom: auto;
   }
 }
+
+
+/* Mobile hero: readable editorial gradient over moving footage; desktop untouched. */
+@media (max-width: 767px) {
+  .hero .hero-vignette {
+    background: linear-gradient(180deg, rgba(0,0,0,.83) 0%, rgba(0,0,0,.77) 24%, rgba(0,0,0,.61) 43%, rgba(0,0,0,.24) 67%, rgba(0,0,0,.08) 100%);
+  }
+}
