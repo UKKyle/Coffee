@@ -120,3 +120,7 @@
   .utility-group span{font-size:8px;letter-spacing:.07em;padding:0 8px}
   .utility-group span+span:before{margin-right:12px}
 }
+
+
+/* Remove ticker separator dot */
+.utility-group span+span:before{content:none!important;margin-right:0!important}
