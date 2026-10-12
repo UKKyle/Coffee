@@ -52,13 +52,14 @@ function ProductCard({ product, onView, onAdd }:{ product:Product; onView:(p:Pro
         {product.tag && <span className="product-badge">{product.tag}</span>}
       </button>
       <div className="product-meta">
-        <span className="product-brand">{productBrand(product)}</span>
+        <div className="product-meta-top">
+          <span className="product-brand">{productBrand(product)}</span>
+          <span className={`stock-dot ${product.stock || 'in'}`}>{product.stock === 'out' ? 'Out of stock' : product.stock === 'low' ? 'Low stock' : 'In stock'}</span>
+        </div>
         <button className="product-name" onClick={() => onView(product)}>{product.name}</button>
         <div className="price-row"><strong>{money(product.price)}</strong>{product.compareAt && <del>{money(product.compareAt)}</del>}</div>
-        {product.stock === 'low' && <span className="low-stock">Low stock</span>}
-        {product.stock === 'out' && <span className="low-stock">Out of stock</span>}
       </div>
-      <button className="quick-add" disabled={product.stock === 'out'} type="button" onClick={() => onAdd(product)}>{product.stock === 'out' ? 'Unavailable' : 'Quick add'} <span>+</span></button>
+      <button className="quick-add" disabled={product.stock === 'out'} type="button" onClick={() => onAdd(product)}><span>{product.stock === 'out' ? 'Unavailable' : 'Quick add'}</span><b>{product.stock === 'out' ? '—' : '+'}</b></button>
     </article>
   );
 }
@@ -264,8 +265,15 @@ function App() {
 
       <section id="shop" className="section shop-section">
         <div className="catalogue-head">
-          <div><p className="eyebrow">SHOP</p><h2>Coffee gear.</h2><p>{filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}</p></div>
-          <button className="catalogue-search" onClick={() => setSearchOpen(true)}>Search products</button>
+          <div>
+            <p className="eyebrow">THE SHOP</p>
+            <h2>Build the setup.</h2>
+            <p className="catalogue-intro">Practical coffee gear, brewing tools and everyday essentials for making better drinks at home.</p>
+          </div>
+          <div className="catalogue-head-actions">
+            <span>{filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}</span>
+            <button className="catalogue-search" onClick={() => setSearchOpen(true)}>Search products <i>⌕</i></button>
+          </div>
         </div>
 
         <div className="catalogue-toolbar">
