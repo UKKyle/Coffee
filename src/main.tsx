@@ -21,6 +21,17 @@ const categories = [
 
 const money = (value:number) => `£${value.toFixed(2)}`;
 
+const productBrand = (product:Product) => {
+  const name = product.name.toLowerCase();
+  if (name.includes('cafelat')) return 'Cafelat';
+  if (name.includes('simply')) return 'Simply';
+  if (name.includes('perfect ted')) return 'Perfect Ted';
+  if (name.includes('planet java')) return 'Planet Java';
+  if (name.includes('zuma')) return 'Zuma';
+  if (name.includes('java caffe')) return 'Java Caffe';
+  return 'Standard Dose';
+};
+
 function ProductVisual({ product }:{ product:Product }) {
   if (product.image) return <div className="product-visual real-image"><img src={product.image} alt="" /></div>;
   return <div className={`product-visual visual-${product.visual}`} aria-hidden="true"><i/><b/></div>;
@@ -34,6 +45,7 @@ function ProductCard({ product, onView, onAdd }:{ product:Product; onView:(p:Pro
         {product.tag && <span className="product-badge">{product.tag}</span>}
       </button>
       <div className="product-meta">
+        <span className="product-brand">{productBrand(product)}</span>
         <button className="product-name" onClick={() => onView(product)}>{product.name}</button>
         <div className="price-row"><strong>{money(product.price)}</strong>{product.compareAt && <del>{money(product.compareAt)}</del>}</div>
         {product.stock === 'low' && <span className="low-stock">Low stock</span>}
@@ -55,6 +67,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [sortMode, setSortMode] = useState('featured');
 
   useEffect(() => {
     Promise.all([fetchProducts(), getCart()])
@@ -98,12 +111,19 @@ function App() {
 
   const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter(product => {
+    const list = products.filter(product => {
       const categoryMatch = activeCategory === 'All' || product.category === activeCategory;
-      const searchMatch = !q || `${product.name} ${product.category} ${product.tag}`.toLowerCase().includes(q);
+      const searchMatch = !q || `${product.name} ${product.category} ${product.tag} ${productBrand(product)}`.toLowerCase().includes(q);
       return categoryMatch && searchMatch;
     });
-  }, [products, query, activeCategory]);
+    if (sortMode === 'price-low') return [...list].sort((a,b) => a.price - b.price);
+    if (sortMode === 'price-high') return [...list].sort((a,b) => b.price - a.price);
+    if (sortMode === 'name') return [...list].sort((a,b) => a.name.localeCompare(b.name));
+    return list;
+  }, [products, query, activeCategory, sortMode]);
+
+  const brandNames = useMemo(() => Array.from(new Set(products.map(productBrand))).filter(Boolean), [products]);
+  const categoryCounts = useMemo(() => Object.fromEntries(categories.map(([title]) => [title, products.filter(p => p.category === title).length])), [products]);
 
   const scrollToShop = (category:string) => {
     setActiveCategory(category);
@@ -157,58 +177,77 @@ function App() {
         <div className="hero-vignette" />
       </section>
 
-      <section id="rituals" className="section rituals">
-        <div className="section-head"><p className="eyebrow">SHOP BY RITUAL</p><h2>Start where you drink.</h2></div>
-        <div className="ritual-grid">
+      <section className="commerce-strip" aria-label="Shopping benefits">
+        <div><strong>FREE UK DELIVERY OVER £30</strong><span>Standard delivery £3.99</span></div>
+        <div><strong>HOME COFFEE SPECIALIST</strong><span>Espresso, filter, iced & matcha</span></div>
+        <div><strong>CURATED RANGE</strong><span>Useful gear, clear pricing</span></div>
+      </section>
+
+      <section id="rituals" className="section department-section">
+        <div className="retail-section-head">
+          <div><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find what you need.</h2></div>
+          <button onClick={() => scrollToShop('All')}>Shop all products →</button>
+        </div>
+        <div className="department-grid">
           {categories.map(([title, copy]) => (
-            <button className={`ritual-card ritual-${title.toLowerCase()}`} onClick={() => scrollToShop(title)} key={title}>
-              <span className="ritual-art" aria-hidden="true"><i/><b/><em/></span>
-              <span className="arrow">↗</span>
-              <span className="ritual-copy"><strong>{title}</strong><small>{copy}</small></span>
+            <button className="department-card" onClick={() => scrollToShop(title)} key={title}>
+              <span><strong>{title}</strong><small>{copy}</small></span>
+              <b>{categoryCounts[title] || 0} products</b>
+              <i>→</i>
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="brand-strip section">
+        <div className="brand-strip-head"><span>BRANDS IN THE SHOP</span><small>Current live catalogue</small></div>
+        <div className="brand-list">{brandNames.map(brand => <span key={brand}>{brand}</span>)}</div>
       </section>
 
       <section id="shop" className="section shop-section">
-        <div className="section-head split"><div><p className="eyebrow">SHOP THE EDIT</p><h2>Small upgrades.<br/>Better coffee.</h2></div><button onClick={() => setSearchOpen(true)}>Search products →</button></div>
-        <div className="category-tabs">{['All','Espresso','Iced','Matcha','Coffee','Setup'].map(category => <button key={category} className={activeCategory === category ? 'active':''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
+        <div className="catalogue-head">
+          <div><p className="eyebrow">SHOP</p><h2>Coffee gear.</h2><p>{filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}</p></div>
+          <button className="catalogue-search" onClick={() => setSearchOpen(true)}>Search products</button>
+        </div>
+
+        <div className="catalogue-toolbar">
+          <div className="category-tabs">{['All','Espresso','Iced','Matcha','Coffee','Setup'].map(category => <button key={category} className={activeCategory === category ? 'active':''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
+          <label className="sort-control"><span>Sort</span><select value={sortMode} onChange={e => setSortMode(e.target.value)}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="name">Name: A–Z</option></select></label>
+        </div>
+
         <div className="product-grid">{filteredProducts.map(product => <ProductCard key={product.variantId} product={product} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
       </section>
 
-      <section className="section setup-builder">
-        <div className="setup-copy"><h2>A practical espresso starter setup.</h2><p>Four useful pieces for dosing, steaming and serving at home.</p><button className="dark-cta" onClick={addStarterSetup}>Add starter setup</button></div>
-        <div className="setup-stack">{starterSetup.map((p,i)=><div className={`setup-item setup-${i}`} key={p.variantId}><ProductVisual product={p}/><span>{p.name}</span></div>)}</div>
-      </section>
-
-      <section className="section value-strip">
-        <div><strong>FREE DELIVERY OVER £30</strong><span>Standard UK delivery is £3.99.</span></div>
-        <div><strong>HOME COFFEE GEAR</strong><span>Espresso, iced coffee, matcha and brew essentials.</span></div>
-        <div><strong>FAIRER EVERYDAY PRICES</strong><span>Useful gear without the inflated coffee-shop markup.</span></div>
-      </section>
-
-      <section className="section deal" id="drops">
-        <div><p className="eyebrow">UNDER £7</p><h2>Small upgrades.<br/>Small spend.</h2><p>Useful coffee extras priced below £7.</p></div>
-        <button className="deal-orb" onClick={() => scrollToShop('Espresso')}><span>UNDER</span><strong>£7</strong><small>SHOP →</small></button>
-      </section>
-
-      <section className="section just-landed">
-        <div className="section-head split"><div><p className="eyebrow">JUST LANDED</p><h2>New arrivals.</h2></div><button onClick={() => scrollToShop('All')}>Shop all →</button></div>
-        <div className="landed-grid">{products.filter(p => p.tag.toLowerCase().includes('just landed')).slice(0,3).map(p => <ProductCard key={p.variantId} product={p} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
-      </section>
-
-      <section className="section editorial">
-        <div className="editorial-media" aria-label="Selected espresso tools">
-          {editorialProducts.map((product,index) => (
-            <button className={`editorial-product editorial-product-${index}`} key={product.id} onClick={() => setActiveProduct(product)} aria-label={`View ${product.name}`}>
-              <ProductVisual product={product}/>
-            </button>
-          ))}
+      <section className="section retail-feature">
+        <div>
+          <p className="eyebrow">START WITH THE ESSENTIALS</p>
+          <h2>Everyday espresso tools.</h2>
+          <p>A straightforward edit of practical tools for dosing, steaming and serving coffee at home.</p>
+          <button className="dark-cta" onClick={() => scrollToShop('Espresso')}>Shop espresso</button>
         </div>
-        <div><h2>Simple tools for better coffee at home.</h2><p>Useful gear, sensible prices and things you’ll actually use.</p></div>
+        <div className="feature-products">{starterSetup.slice(0,3).map(product => <ProductCard key={product.variantId} product={product} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
       </section>
 
-      <footer><span>STANDARD DOSE™</span><span>HOME COFFEE, DIALED IN.</span></footer>
+      <section className="section just-landed" id="drops">
+        <div className="retail-section-head">
+          <div><p className="eyebrow">JUST LANDED</p><h2>New to the shop.</h2></div>
+          <button onClick={() => scrollToShop('All')}>View all →</button>
+        </div>
+        <div className="landed-grid">{products.filter(p => p.tag.toLowerCase().includes('just landed')).slice(0,4).map(p => <ProductCard key={p.variantId} product={p} onView={setActiveProduct} onAdd={addToCart}/>)}</div>
+      </section>
+
+      <section className="service-grid section">
+        <div><strong>Delivery</strong><span>£3.99 standard UK delivery. Free when you spend £30.</span></div>
+        <div><strong>Product-led range</strong><span>Focused on useful home coffee gear rather than endless filler.</span></div>
+        <div><strong>Clear availability</strong><span>Product pages show whether an item is available before you add it.</span></div>
+      </section>
+
+      <footer className="site-footer">
+        <div className="footer-brand"><strong>STANDARD DOSE</strong><p>Home coffee, dialed in.</p></div>
+        <div><strong>SHOP</strong><button onClick={() => scrollToShop('All')}>All products</button><button onClick={() => scrollToShop('Espresso')}>Espresso</button><button onClick={() => scrollToShop('Coffee')}>Coffee</button><button onClick={() => scrollToShop('Matcha')}>Matcha</button></div>
+        <div><strong>DISCOVER</strong><button onClick={() => document.querySelector('#rituals')?.scrollIntoView({behavior:'smooth'})}>Categories</button><button onClick={() => document.querySelector('#drops')?.scrollIntoView({behavior:'smooth'})}>Just landed</button><button onClick={() => setSearchOpen(true)}>Search</button></div>
+        <div className="footer-meta"><strong>STANDARD DOSE COFFEE</strong><span>UK online coffee retailer</span><span>© 2026 Standard Dose</span></div>
+      </footer>
 
       {cartOpen && <>
         <button className="overlay" aria-label="Close bag" onClick={() => setCartOpen(false)}/>
