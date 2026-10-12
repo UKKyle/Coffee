@@ -1176,3 +1176,12 @@
     grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
+
+
+/* Mobile-only hero content placement; desktop remains unchanged. */
+@media (max-width: 767px) {
+  .hero .hero-copy {
+    top: calc(80px + 36px);
+    bottom: auto;
+  }
+}
