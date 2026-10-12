@@ -56,3 +56,17 @@
 @media(hover:hover){.utility-bar:hover .utility-track{animation-play-state:paused}}
 @media(prefers-reduced-motion:reduce){.utility-track{animation:none}.utility-group:nth-child(2){display:none}}
 @media(max-width:560px){.utility-group{height:28px}.utility-group span{padding:0 16px;font-size:9px}}
+
+
+/* Utility ticker spacing correction */
+.utility-track{min-width:200vw}
+.utility-group{width:100vw;min-width:100vw;justify-content:space-around;padding:0 3vw}
+.utility-group span{padding:0 14px}
+.utility-group i{margin:0 2px}
+@keyframes utility-marquee{from{transform:translateX(0)}to{transform:translateX(-100vw)}}
+@media(max-width:900px){
+  .utility-track{min-width:max-content}
+  .utility-group{width:auto;min-width:max-content;justify-content:flex-start;padding:0 18px}
+  .utility-group span{padding:0 22px}
+  @keyframes utility-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+}
