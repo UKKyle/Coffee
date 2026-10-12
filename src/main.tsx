@@ -182,11 +182,6 @@ function App() {
           <div className="hero-actions">
             <button className="cta" onClick={() => scrollToShop('All')}>Shop all coffee gear</button>
           </div>
-          <div className="hero-proof" aria-label="Store benefits">
-            <span>Free UK delivery over £30</span>
-            <span>Curated home-barista range</span>
-            <span>Clear stock availability</span>
-          </div>
         </div>
         <div className="hero-media-shell">
           <video className="hero-video" autoPlay muted playsInline loop preload="auto" poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94" aria-label="Barista inserting and locking a portafilter into an espresso machine">
@@ -195,6 +190,12 @@ function App() {
           <div className="hero-photo-fallback" aria-hidden="true" />
         </div>
         <div className="hero-vignette" />
+      </section>
+
+      <section className="hero-trust-bar" aria-label="Why shop Standard Dose">
+        <span><b>01</b> Curated for home baristas</span>
+        <span><b>02</b> Clear stock availability</span>
+        <span><b>03</b> UK delivery from £3.99</span>
       </section>
 
       <section id="rituals" className="section department-section">
