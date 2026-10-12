@@ -178,8 +178,8 @@ function App() {
         <div className="hero-copy">
           <p className="eyebrow">HOME COFFEE, DIALED IN.</p>
           <h1>Make the ritual<br/>feel better.</h1>
-          <p className="hero-sub">Tools, coffee and objects for the home barista.</p>
-          <button className="cta" onClick={() => scrollToShop('All')}>Shop the setup</button>
+          <p className="hero-sub">Coffee gear, brewing tools and everyday essentials for home baristas.</p>
+          <button className="cta" onClick={() => scrollToShop('All')}>Shop coffee gear</button>
         </div>
         <div className="hero-media-shell">
           <video className="hero-video" autoPlay muted playsInline loop preload="auto" poster="https://images.pexels.com/photos/6205575/pexels-photo-6205575.jpeg?auto=compress&cs=tinysrgb&w=2200&q=94" aria-label="Barista inserting and locking a portafilter into an espresso machine">
