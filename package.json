@@ -1,5 +1,5 @@
 {
-  "name": "coffee-storefront-phase1",
+  "name": "mr-handsome-preview",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,17 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "wrangler deploy"
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@cloudflare/vite-plugin": "latest",
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "three": "latest",
-    "gsap": "latest",
+    "lucide-react": "latest",
     "wrangler": "latest"
   },
   "devDependencies": {}
